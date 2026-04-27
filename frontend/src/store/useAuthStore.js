@@ -51,6 +51,7 @@ export const useAuthStore = create((set) => ({
       });
       return { success: true };
     } catch (error) {
+       set({ loading: false });
        return { success: false, message: error.response?.data?.message || "Login failed" };
     }
   },
