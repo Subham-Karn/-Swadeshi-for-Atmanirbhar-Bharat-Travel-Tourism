@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import api from '../api/axios.js';
+import toast from 'react-hot-toast';
 
 export const useAuthStore = create((set) => ({
   user: JSON.parse(localStorage.getItem('user')) || null,
   accessToken: null,
   loading: false,
 
-  // Step 1: Request OTP
   requestSignup: async (formData) => {
     set({ loading: true });
     try {
@@ -18,8 +18,6 @@ export const useAuthStore = create((set) => ({
       throw error.response?.data?.message || "Signup failed";
     }
   },
-
-  // Step 2: Verify OTP & Finalize Account
   verifyOtp: async (email, otp) => {
     set({ loading: true });
     try {
@@ -40,10 +38,27 @@ export const useAuthStore = create((set) => ({
       throw error.response?.data?.message || "Verification failed";
     }
   },
-
-  logout: () => {
+  loginUser: async (formdata) =>{
+    set({loading: true});
+    try {
+      const {data} = await api.post('/auth/login', formdata);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      set({ 
+        user: data.user, 
+        accessToken: data.accessToken, 
+        loading: false 
+      });
+      return { success: true };
+    } catch (error) {
+       return { success: false, message: error.response?.data?.message || "Login failed" };
+    }
+  },
+  logout: async () => {
     localStorage.removeItem('user');
     localStorage.removeItem('refreshToken');
-    set({ user: null, accessToken: null });
+   const { data } = await api.post('/auth/logout' , {token: localStorage.getItem('refreshToken')});
+   toast.success(data.message); 
+   set({ user: null, accessToken: null });
   }
 }));

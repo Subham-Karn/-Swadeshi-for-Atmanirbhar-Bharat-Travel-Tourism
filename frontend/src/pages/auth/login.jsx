@@ -1,11 +1,27 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Globe, ArrowRight, Eye, EyeOff } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../store/useAuthStore';
+import toast from 'react-hot-toast';
 
 const Login = () => {
+  const {loginUser , loading} = useAuthStore();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
+  const navigate = useNavigate();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+     const res = await loginUser({ email, password });
+     if(!res.success) throw new Error(res.message);
+     toast.success("Login successful");
+     navigate('/');
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }
   return (
     <div className="min-h-screen w-full flex bg-white overflow-hidden">
       {/* Left Visual Panel */}
@@ -29,18 +45,18 @@ const Login = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 md:p-16">
         <div className="w-full max-w-md">
           <div className="mb-10">
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">Sign In</h1>
+            <h1 className="text-3xl font-black text-gray-900 tracking-tight">LogIn</h1>
             <p className="text-gray-400 font-medium text-sm mt-2">
               Don't have an account? <Link to="/auth/signup" className="text-[#00A699] font-black hover:underline">Create one</Link>
             </p>
           </div>
 
-          <form className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Email</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                <input type="email" placeholder="name@example.com" className="w-full pl-12 pr-4 py-4 rounded-2xl bg-gray-50 border-none outline-none focus:ring-2 focus:ring-[#00A699]/20 font-bold text-gray-700" />
+                <input type="email" onChange={(e)=>setEmail(e.target.value)} placeholder="name@example.com" className="w-full pl-12 pr-4 py-4 rounded-2xl bg-gray-50 border-none outline-none focus:ring-2 focus:ring-[#00A699]/20 font-bold text-gray-700" />
               </div>
             </div>
 
@@ -51,15 +67,30 @@ const Login = () => {
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                <input type={showPassword ? "text" : "password"} placeholder="••••••••" className="w-full pl-12 pr-12 py-4 rounded-2xl bg-gray-50 border-none outline-none focus:ring-2 focus:ring-[#00A699]/20 font-bold text-gray-700" />
+                <input type={showPassword ? "text" : "password"} onChange={(e)=>setPassword(e.target.value)} placeholder="••••••••" className="w-full pl-12 pr-12 py-4 rounded-2xl bg-gray-50 border-none outline-none focus:ring-2 focus:ring-[#00A699]/20 font-bold text-gray-700" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
-            <button className="w-full bg-gray-900 text-white py-5 rounded-2xl font-black tracking-widest hover:bg-[#00A699] transition-all flex items-center justify-center gap-2 shadow-xl shadow-gray-100">
-              LOGIN IN <ArrowRight size={18} />
+            <button 
+              type="submit" 
+              disabled={loading} // 2. Disable while loading
+              className={`md:col-span-2 w-full py-4 rounded-xl font-black tracking-widest transition-all flex items-center justify-center gap-2 shadow-xl mt-4 
+                ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-900 hover:bg-[#00A699] text-white'}`}
+            >
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                   LOGINING....
+                </>
+              ) : (
+                <>
+                  <span>LOGIN</span>
+                  <ArrowRight size={18} />
+                </>
+              )}
             </button>
           </form>
         </div>

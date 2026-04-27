@@ -8,17 +8,16 @@ const generateTokens = (user) => {
   const accessToken = jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: '15m' } // Short lived
+    { expiresIn: '15m' }
   );
   const refreshToken = jwt.sign(
     { id: user._id },
     process.env.REFRESH_SECRET,
-    { expiresIn: '7d' } // Long lived
+    { expiresIn: '7d' } 
   );
   return { accessToken, refreshToken };
 };
 
-// --- STEP 1: REQUEST SIGNUP ---
 export const requestSignup = async (req, res) => {
   const { name, username, gender, age, email, phone, address, password } = req.body;
   if (!req.body) {
@@ -51,7 +50,6 @@ export const requestSignup = async (req, res) => {
   }
 };
 
-// --- STEP 2: VERIFY OTP & LOGIN ---
 export const verifyAndCreateUser = async (req, res) => {
   const { email, otp } = req.body;
 
@@ -100,5 +98,55 @@ export const refreshSession = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Session refresh failed." });
+  }
+};
+
+
+export const loginUser = async (req , res) =>{
+  const {email , password} = req.body;
+  try {
+    if(!req.body){
+      return res.status(400).json({ message: "Request body is missing" });
+    }
+    const user = await User.findOne({ email });
+    if(!user){
+      return res.status(400).json({ message: "User not found." });
+    }
+    if(!user.isVerified){
+      return res.status(400).json({ message: "User is not verified." });
+    }
+    const isMatch = await bcrypt.compare(password , user.password);
+    if(isMatch){
+      const { accessToken , refreshToken } = generateTokens(user);
+      user.refreshTokens.push(refreshToken);
+      await user.save();
+      res.status(200).json({ message: "Login successful." , user: { id: user._id, name: user.name, role: user.role }, accessToken , refreshToken });
+    }else{
+      return res.status(400).json({ message: "Invalid password." });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export const logout = async (req, res) => {
+  const { token } = req.body; 
+
+  try {
+    if (!token) {
+      return res.status(400).json({ message: "Refresh token is required for logout." });
+    }
+
+    const user = await User.findOne({ refreshTokens: token });
+
+    if (user) {
+      user.refreshTokens = user.refreshTokens.filter((t) => t !== token);
+      await user.save();
+    }
+
+    res.status(200).json({ message: "Logged out successfully. Session expired." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error during logout process." });
   }
 };
