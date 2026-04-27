@@ -9,7 +9,7 @@ import DestinationRoute from './pages/Destination'
 import TripDetails from './pages/TripsRoute'
 import AboutIndia from './pages/AboutIndia'
 import ContactRoute from './pages/ContactRoutte'
-import NotFound from './pages/NotFound.jsx'
+import Notfound from './pages/Notfound.jsx'
 import Login from './pages/auth/login'
 import SignUp from './pages/auth/signup'
 import { Toaster } from 'react-hot-toast'
@@ -50,7 +50,7 @@ const App = () => {
           <Route path='/contact' element={<UserLayout><ContactRoute/></UserLayout>} />
           
           <Route path='/admin/*' element={<AdminRoute />} />
-          <Route path='*' element={<NotFound />} />
+          <Route path='*' element={<Notfound />} />
       </Routes>
     </>
   )
