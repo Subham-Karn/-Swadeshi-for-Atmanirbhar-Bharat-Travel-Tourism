@@ -1,9 +1,10 @@
 import "dotenv/config.js"
 import express from "express";
 import cors from "cors";
-
+import connectDb from "./config/dbConfig.js";
+import AuthRoutes from "./routes/AuthRoutes.js";
 const app = express();
-
+connectDb();
 const PORT = process.env.PORT;
 
 const ALLOWED_ORIGIN = [
@@ -20,6 +21,8 @@ app.use(cors({
         return callback(null , false)
     }
 }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use((req , res , next)=>{
     const origin = req.headers.origin;
@@ -38,6 +41,8 @@ app.get("/" , (req , res)=>{
         message: "Welcome to Bharat Darshan Server"
     })
 })
+
+app.use("/api/auth" , AuthRoutes);
 
 app.listen(PORT , ()=>{
     console.log(`http://localhost:${PORT}`);
