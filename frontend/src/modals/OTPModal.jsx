@@ -1,30 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, ShieldCheck, MailOpen } from 'lucide-react';
+import { X, MailOpen } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import toast from 'react-hot-toast';
 
 const OTPModal = ({ email, onClose }) => {
-  const { verifyOtp , loading} = useAuthStore();
+  const { verifyOtp, requestSignup, loading } = useAuthStore();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  
+  // --- Timer State ---
+  const [timer, setTimer] = useState(30);
+  const [canResend, setCanResend] = useState(false);
+
+  // Timer Logic
+  useEffect(() => {
+    let interval;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    } else {
+      setCanResend(true);
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [timer]);
 
   const handleChange = (element, index) => {
     if (isNaN(element.value)) return false;
     setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
-    if (element.nextSibling) {
+    if (element.value && element.nextSibling) {
       element.nextSibling.focus();
     }
   };
 
-const handleVerify = async () => {
+  const handleVerify = async () => {
     const code = otp.join("");
     const loadId = toast.loading("Verifying...");
-    
     try {
       await verifyOtp(email, code);
       toast.success("Account created! Welcome.", { id: loadId });
-      // Navigation is usually handled here or in the Store
-      window.location.href = "/"; 
+      window.location.href = "/";
+    } catch (err) {
+      toast.error(err, { id: loadId });
+    }
+  };
+
+  // --- Resend Logic ---
+  const handleResend = async () => {
+    if (!canResend) return;
+    
+    const loadId = toast.loading("Resending OTP...");
+    try {
+      await requestSignup({ email, resend: true }); 
+      
+      toast.success("New OTP sent!", { id: loadId });
+      setTimer(30); 
+      setCanResend(false);
+      setOtp(['', '', '', '', '', '']);
     } catch (err) {
       toast.error(err, { id: loadId });
     }
@@ -56,7 +89,7 @@ const handleVerify = async () => {
                 key={index}
                 type="text"
                 maxLength="1"
-                className="w-12 h-14 text-center text-xl font-black bg-gray-50 border-2 border-transparent focus:border-[#00A699] focus:bg-white rounded-xl outline-none transition-all"
+                className="w-10 h-12 md:w-12 md:h-14 text-center text-xl font-black bg-gray-50 border-2 border-transparent focus:border-[#00A699] focus:bg-white rounded-xl outline-none transition-all"
                 value={data}
                 onChange={e => handleChange(e.target, index)}
                 onFocus={e => e.target.select()}
@@ -64,25 +97,33 @@ const handleVerify = async () => {
             ))}
           </div>
 
-        <button 
-          onClick={handleVerify}
-          disabled={loading || otp.join("").length < 6} // Disable if loading or OTP incomplete
-          className={`w-full py-4 rounded-2xl font-black tracking-widest shadow-lg transition-all flex items-center justify-center gap-2
-            ${loading ? 'bg-teal-200 cursor-not-allowed' : 'bg-[#00A699] hover:bg-[#008f84] text-white'}`}
-        >
-          {loading ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              VERIFYING...
-            </>
-          ) : (
-            "VERIFY & SIGN UP"
-          )}
-        </button>
+          <button 
+            onClick={handleVerify}
+            disabled={loading || otp.join("").length < 6}
+            className={`w-full py-4 rounded-2xl font-black tracking-widest shadow-lg transition-all flex items-center justify-center gap-2
+              ${loading ? 'bg-teal-200 cursor-not-allowed' : 'bg-[#00A699] hover:bg-[#008f84] text-white'}`}
+          >
+            {loading ? "VERIFYING..." : "VERIFY & SIGN UP"}
+          </button>
           
-          <p className="mt-6 text-xs font-bold text-gray-400">
-            Didn't receive the code? <button className="text-[#00A699] hover:underline">Resend OTP</button>
-          </p>
+          {/* --- Resend UI --- */}
+          <div className="mt-8 text-sm font-bold text-gray-400">
+            {canResend ? (
+              <p>
+                Didn't receive the code? 
+                <button 
+                  onClick={handleResend}
+                  className="text-[#00A699] ml-1 hover:underline cursor-pointer"
+                >
+                  Resend OTP
+                </button>
+              </p>
+            ) : (
+              <p>
+                Resend OTP in <span className="text-gray-900">{timer}s</span>
+              </p>
+            )}
+          </div>
         </div>
       </motion.div>
     </div>

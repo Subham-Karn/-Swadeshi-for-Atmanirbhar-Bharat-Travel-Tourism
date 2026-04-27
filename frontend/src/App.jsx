@@ -33,7 +33,6 @@ const App = () => {
           },
         }}
       />
-
       <Routes>
           {/* Home */}
           <Route path="/" element={<UserLayout><HomeRoute/></UserLayout>} />
@@ -60,7 +59,6 @@ export default App
 
 const UserLayout = ({ children }) => {
   return (
-    <ProtectedRoute>
       <div className="flex flex-col min-h-screen bg-white">
         {/* Toaster removed from here */}
         <Navbar />
@@ -69,6 +67,5 @@ const UserLayout = ({ children }) => {
         </main>
         <Footer />
       </div>
-    </ProtectedRoute>
   );
 };
