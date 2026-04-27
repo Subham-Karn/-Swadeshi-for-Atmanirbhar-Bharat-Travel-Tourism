@@ -9,7 +9,8 @@ const PORT = process.env.PORT;
 
 const ALLOWED_ORIGIN = [
    "http://localhost:2000",
-   "https://bharatdarshan-flame.vercel.app"
+   "https://bharatdarshan-flame.vercel.app",
+   "https://serverbharatdarshan.vercel.app",
 ];
 
 app.use(cors({
