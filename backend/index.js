@@ -8,7 +8,7 @@ const app = express();
 connectDb();
 const PORT = process.env.PORT;
 
-const ALLOWED_ORIGIN = process.env.FRONTEND_URL || process.env.VITE_API_URL;
+const ALLOWED_ORIGIN = process.env.FRONTEND_URL;
 
 app.use(
   cors({
