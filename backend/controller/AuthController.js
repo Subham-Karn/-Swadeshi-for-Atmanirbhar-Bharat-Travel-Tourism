@@ -38,7 +38,7 @@ export const requestSignup = async (req, res) => {
     await User.findOneAndUpdate(
       { email },
       { name, username, gender, age, phone, address, password: hashedPassword, otp, otpExpires, isVerified: false },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: "after" }
     );
 
     const emailSent = await sendVerificationEmail(email, otp);
@@ -134,19 +134,21 @@ export const logout = async (req, res) => {
 
   try {
     if (!token) {
-      return res.status(400).json({ message: "Refresh token is required for logout." });
+      return res.status(400).json({sucess: false , message: "Refresh token is required for logout." });
     }
 
-    const user = await User.findOne({ refreshTokens: token });
-
-    if (user) {
-      user.refreshTokens = user.refreshTokens.filter((t) => t !== token);
-      await user.save();
+    const result = await User.updateOne(
+      {new: true},
+      { refreshTokens: token },
+      { $pull: { refreshTokens: token } }
+    )
+    if (result.matchedCount === 0) {
+      return res.status(200).json({sucess: true , message: "Session already expired or invalid." });
     }
 
-    res.status(200).json({ message: "Logged out successfully. Session expired." });
+    res.status(200).json({sucess: true , message: "Logged out successfully. Session expired." });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error during logout process." });
+    console.error("Logout Error:", error);
+    res.status(500).json({sucess: false , message: "Error during logout process." });
   }
 };

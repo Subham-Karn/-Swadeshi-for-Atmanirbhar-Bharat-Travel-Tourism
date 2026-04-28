@@ -5,7 +5,7 @@ import Navbar from './components/Navbar'
 import HomeRoute from './pages/Home'
 import Footer from './components/Footer'
 import SearchPage from './pages/SearchPage'
-import DestinationRoute from './pages/Destination'
+import DestinationRoute from './pages/destination/Destination.jsx'
 import TripDetails from './pages/TripsRoute'
 import AboutIndia from './pages/AboutIndia'
 import ContactRoute from './pages/ContactRoutte'
@@ -14,23 +14,51 @@ import Login from './pages/auth/login'
 import SignUp from './pages/auth/signup'
 import { Toaster } from 'react-hot-toast'
 import ProtectedRoute from './components/ProcetedRoute'
+import Unauthorized from './pages/Unauthorized.jsx'
+import DestinationDetails from './pages/destination/DestinationDetails.jsx'
 const App = () => {
   return (
     <>
-      {/* 1. Place Toaster here so it is global to ALL routes */}
       <Toaster 
         position="bottom-right"
         reverseOrder={false}
         toastOptions={{
           duration: 4000,
           style: {
-            borderRadius: '16px',
-            background: '#333',
-            color: '#fff',
+            borderRadius: '20px',      // Extra rounded for your travel UI
+            background: '#1a1a1a',     // Deep Charcoal
+            color: '#ffffff',          // White text
+            padding: '16px 24px',
             fontFamily: 'inherit',
-            fontWeight: '600',
-            fontSize: '14px'
+            fontWeight: '700',         // Bold for readability
+            fontSize: '14px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
           },
+          // Theme-specific overrides
+          success: {
+            iconTheme: {
+              primary: '#00A699',      // Your brand Teal
+              secondary: '#ffffff',
+            },
+            style: {
+              borderLeft: '4px solid #00A699', // Thick teal accent
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ff4b4b',      // Bright Red for errors
+              secondary: '#ffffff',
+            },
+            style: {
+              borderLeft: '4px solid #ff4b4b', // Thick red accent
+            },
+          },
+          loading: {
+            style: {
+              borderLeft: '4px solid #00A699',
+            },
+          }
         }}
       />
       <Routes>
@@ -44,12 +72,18 @@ const App = () => {
           {/* Pages */}
           <Route path='/trips' element={<UserLayout><TripDetails/></UserLayout>} />
           <Route path='/destinations' element={<UserLayout><DestinationRoute/></UserLayout>} />
+          <Route path='/destinations/:id' element={<UserLayout><DestinationDetails/></UserLayout>} />
           <Route path='/search' element={<UserLayout><SearchPage/></UserLayout>} />
           <Route path='/about' element={<UserLayout><AboutIndia/></UserLayout>} />
           <Route path='/contact' element={<UserLayout><ContactRoute/></UserLayout>} />
           
-          <Route path='/admin/*' element={<AdminRoute />} />
+          <Route path='/admin/*' element={
+              <ProtectedRoute requiredRoles={["admin"]} >
+                <AdminRoute />
+              </ProtectedRoute>
+              } />
           <Route path='*' element={<Notfound />} />
+          <Route path='/unauthorized' element={<Unauthorized />} />
       </Routes>
     </>
   )
@@ -60,7 +94,6 @@ export default App
 const UserLayout = ({ children }) => {
   return (
       <div className="flex flex-col min-h-screen bg-white">
-        {/* Toaster removed from here */}
         <Navbar />
         <main className="grow">
           {children}

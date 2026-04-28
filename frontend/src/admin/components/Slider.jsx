@@ -1,17 +1,27 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, ChevronLeft, X } from 'lucide-react';
+import { Menu, ChevronLeft, X, LogOut } from 'lucide-react';
 import { slider } from '../../assets/assets';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../store/useAuthStore';
+import toast from 'react-hot-toast';
 
 const Slider = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
-  // State for Desktop collapse
   const [isOpen, setIsOpen] = useState(true);
-  // State for Mobile drawer
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const {user , logout} = useAuthStore((state) => state);
+  
+const getProfileName  = (name = "" ) =>{
+  let nameArr = name.split(" ");
+   return nameArr[0][0].toUpperCase() + nameArr[1][0].toUpperCase();
+}
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -94,16 +104,38 @@ const Slider = () => {
           );
         })}
       </nav>
-
-      {/* Footer */}
+      {/* Footer / User Profile Section */}
       <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-        <div className="flex items-center gap-3 p-2 rounded-xl bg-white shadow-sm border border-gray-100">
-          <div className="w-9 h-9 rounded-lg bg-[#00A699] shrink-0 flex items-center justify-center text-white font-bold">JD</div>
-          {(isOpen || isMobileOpen) && (
-            <div className="overflow-hidden">
-              <p className="text-sm font-bold text-gray-800 truncate">John Doe</p>
-              <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Super Admin</p>
+        <div className="flex items-center justify-between p-2 rounded-xl bg-white shadow-sm border border-gray-100 transition-all hover:shadow-md">
+          
+          <div className="flex items-center gap-3 overflow-hidden">
+            {/* Avatar */}
+            <div className="w-10 h-10 rounded-lg bg-[#00A699] shrink-0 flex items-center justify-center text-white font-black shadow-inner">
+              {getProfileName(user?.name)}
             </div>
+
+            {/* Name and Role */}
+            {(isOpen || isMobileOpen) && (
+              <div className="flex flex-col min-w-0">
+                <p className="text-sm font-black text-gray-800 truncate leading-tight">
+                  {user?.name || "Guest User"}
+                </p>
+                <p className="text-[10px] uppercase tracking-widest font-black text-[#00A699] mt-0.5">
+                  {user?.role || "Member"}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Logout Button */}
+          {(isOpen || isMobileOpen) && (
+            <button 
+              onClick={handleLogout}
+              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90"
+              title="Logout"
+            >
+              <LogOut size={18} />
+            </button>
           )}
         </div>
       </div>

@@ -7,27 +7,23 @@ const app = express();
 connectDb();
 const PORT = process.env.PORT;
 
-const ALLOWED_ORIGIN = [
-  "http://localhost:2000",
-  "https://bharatdarshan-flame.vercel.app",
-];
+const ALLOWED_ORIGIN = process.env.FRONTEND_URL;
 
 app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
 
-      if (ALLOWED_ORIGIN.includes(origin)) {
-        return callback(null, origin); 
+      if (origin === ALLOWED_ORIGIN) {
+        return callback(null, true);
       }
 
-      return callback(new Error("Not allowed by CORS")); 
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

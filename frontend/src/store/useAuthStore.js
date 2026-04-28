@@ -56,10 +56,11 @@ export const useAuthStore = create((set) => ({
     }
   },
   logout: async () => {
+    const { data } = await api.post('/auth/logout' , {token: localStorage.getItem('refreshToken')});
+    if(data.success === false) return toast.error(data.message);
+    toast.success(data.message); 
     localStorage.removeItem('user');
     localStorage.removeItem('refreshToken');
-   const { data } = await api.post('/auth/logout' , {token: localStorage.getItem('refreshToken')});
-   toast.success(data.message); 
-   set({ user: null, accessToken: null });
+    set({ user: null, accessToken: null });
   }
 }));

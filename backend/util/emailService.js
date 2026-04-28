@@ -1,7 +1,7 @@
 import { transporter } from "../config/emailConfig.js";
 export const sendVerificationEmail = async (userEmail, otp) => {
   const mailOptions = {
-    from: 'Bharat Darshan <onboarding@resend.dev>',
+    from: 'Bharat Darshan <noreply@composehub.in>',
     to: userEmail,
     subject: 'Verify your Bharat Darshan Account',
     html: `

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, User, Menu, X, Globe, ChevronRight, 
-  LogOut, Briefcase, Settings, ChevronDown 
+  LogOut, Briefcase, Settings, ChevronDown, 
+  UserStar
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { GiIndiaGate } from "react-icons/gi";
@@ -29,6 +30,11 @@ const Navbar = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isHomePage]);
+
+  const getProfileName  = (name = "" ) =>{
+  let nameArr = name.split(" ");
+   return nameArr[0][0].toUpperCase() + nameArr[1][0].toUpperCase();
+}
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -96,7 +102,7 @@ const Navbar = () => {
                 className={`flex items-center gap-2 p-1.5 rounded-full hover:bg-teal-50 transition-all border-2 ${isScrolled ? 'border-gray-100' : 'border-white/20'}`}
               >
                 <div className="w-8 h-8 bg-[#00A699] rounded-full flex items-center justify-center text-white font-bold text-xs uppercase">
-                  {user.name.charAt(0)}
+                  {getProfileName(user.name)}
                 </div>
                 <ChevronDown size={16} className={textColor} />
               </button>
@@ -119,7 +125,15 @@ const Navbar = () => {
                         <Briefcase size={18} /> My Bookings
                       </button>
                     </div>
-
+                    {
+                      user?.role.toLowerCase() === 'admin' && (
+                        <div className="p-2">
+                          <button onClick={() => navigate('/admin')} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-600 hover:bg-teal-50 hover:text-[#00A699] rounded-2xl transition-all">
+                            <UserStar size={18} /> Vist Admin
+                          </button>
+                        </div>
+                      )
+                    }
                     <div className="px-2 pt-2 border-t border-gray-50">
                       <button 
                         onClick={handleLogout}
@@ -212,6 +226,14 @@ const Navbar = () => {
                       <Briefcase className="text-[#00A699]" size={24} />
                       <span className="text-sm font-black text-gray-900">Bookings</span>
                     </button>
+                    {
+                      user?.role.toLowerCase() === 'admin' && (
+                        <button onClick={() => navigate('/admin')} className="flex w-full items-start gap-3 p-5 bg-teal-50 rounded-3xl border border-teal-100 group">
+                          <UserStar className="text-[#00A699]" size={24} />
+                          <span className="text-sm font-black text-gray-900">Admin</span>
+                        </button>
+                      )
+                    }
                   </>
                 ) : (
                   <button 
@@ -248,7 +270,7 @@ const Navbar = () => {
                   onClick={handleLogout}
                   className="w-full flex items-center justify-center gap-2 p-5 text-red-500 font-black text-xs uppercase tracking-widest border-2 border-red-50 rounded-3xl hover:bg-red-50 transition-all"
                 >
-                  <LogOut size={18} /> Sign Out
+                  <LogOut size={18} /> Log Out
                 </button>
               )}
             </motion.div>
