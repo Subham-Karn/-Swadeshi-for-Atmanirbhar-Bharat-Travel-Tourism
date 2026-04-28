@@ -145,7 +145,7 @@ const getProfileName  = (name = "" ) =>{
   return (
     <>
       {/* 1. MOBILE TRIGGER BUTTON (Visible only on mobile) */}
-      <div className="md:hidden fixed top-4 left-4 z-40">
+      <div className="md:hidden fixed top-2 right-4 z-40">
         <button 
           onClick={() => setIsMobileOpen(true)}
           className="p-3 bg-white shadow-md border border-gray-200 rounded-full text-[#00A699]"

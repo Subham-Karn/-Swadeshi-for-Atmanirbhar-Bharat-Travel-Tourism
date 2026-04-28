@@ -3,71 +3,56 @@ import City from "../schemas/Cities.js";
 
 export const createRegion = async (req, res) => {
   try {
-    const { stateData, cityData, userId } = req.body;
-
-    // 1. Validation
-    if (!stateData || !cityData || !userId) {
+    // 1. Destructure exactly what the frontend sends
+    const { state, cities, userId } = req.body;
+    // 2. Strict Validation Check
+    if (!state || !cities || !userId) {
       return res.status(400).json({ 
         success: false, 
-        message: "Missing required State, City, or User identification." 
+        message: `Missing: ${!state ? 'State ' : ''}${!cities ? 'Cities ' : ''}${!userId ? 'User' : ''}` 
       });
     }
 
-    // 2. Check if State already exists
-    let state = await State.findOne({ stateName: stateData.stateName });
+    // 3. Find or Create State
+    let stateDoc = await State.findOne({ stateName: state.stateName });
 
-    if (!state) {
-      // Create new State if it doesn't exist
-      state = await State.create({
+    if (!stateDoc) {
+      stateDoc = await State.create({
         uid: userId,
-        regionType: stateData.regionType,
-        stateName: stateData.stateName,
-        stateImage: stateData.stateImage,
-        citiesCount: stateData.citiesCount || 1,
-        status: stateData.status || "Active",
-        isPopular: stateData.isPopular || false,
-        rating: stateData.rating || 0,
-        overview: stateData.overview,
-        bestTimeToVisit: stateData.bestTimeToVisit,
-        reach: stateData.reach,
+        regionType: state.regionType,
+        stateName: state.stateName,
+        stateImage: state.stateImage,
+        citiesCount: state.citiesCount || cities.length,
+        status: state.status || "Active",
+        isPopular: state.isPopular || false,
+        bestTimeToVisit: state.bestTimeToVisit ||"NA",
+        overview: state.overview || state.stateOverview,
+        reach: state.reach,
       });
     } else {
-      // If State exists, increment the city count
-      state.citiesCount += 1;
-      await state.save();
+      stateDoc.citiesCount += cities.length;
+      await stateDoc.save();
     }
 
-    // 3. Create the City linked to the State
-    const city = await City.create({
-      uid: userId,
-      regionId: state._id, // The bridge between State and City
-      regionType: state.regionType,
-      cityName: cityData.cityName,
-      cityImage: cityData.cityImage,
-      isPopular: cityData.isPopular || false,
-      overview: cityData.overview,
-      bestTimeToVisit: cityData.bestTimeToVisit,
-      rating: cityData.rating || 0,
-    });
+    // 4. Create all Cities from the array
+    const createdCities = await Promise.all(
+      cities.map(item => City.create({
+        uid: userId,
+        regionId: stateDoc._id,
+        regionType: stateDoc.regionType,
+        cityName: item.cityName,
+        cityImage: item.imageUrl, // Mapping frontend 'imageUrl' to backend 'cityImage'
+        overview: item.description, // Mapping frontend 'description' to backend 'overview'
+        isPopular: item.isPopular || false
+      }))
+    );
 
-    res.status(201).json({
-      success: true,
-      message: "Region workflow completed successfully.",
-      data: {
-        state,
-        city
-      }
-    });
+    res.status(201).json({ success: true, data: { state: stateDoc, cities: createdCities } });
 
   } catch (error) {
-    console.error("Region Controller Error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || "Internal Server Error" 
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 export const getStates = async (req, res) => {
   try {
@@ -90,73 +75,61 @@ export const getCitiesByState = async (req, res) => {
 };
 
 
-// Update State or City
 export const updateRegion = async (req, res) => {
   try {
     const { id } = req.params;
-    const { type, updateData } = req.body; // type: 'state' or 'city'
+    const { state: stateData, cities: citiesArray, userId } = req.body;
 
-    if (type === "state") {
-      const updatedState = await State.findByIdAndUpdate(
-        id,
-        { $set: updateData },
-        { new: true, runValidators: true }
-      );
-      return res.status(200).json({ success: true, data: updatedState });
+    const updatedState = await State.findByIdAndUpdate(
+      id,
+      { $set: stateData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedState) return res.status(404).json({ success: false, message: "State not found" });
+    await City.deleteMany({ regionId: id });
+    
+    if (citiesArray && citiesArray.length > 0) {
+      const cityDocs = citiesArray.map(city => ({
+        ...city,
+        uid: userId,
+        regionId: id,
+        regionType: updatedState.regionType,
+        cityImage: city.imageUrl,
+        overview: city.description
+      }));
+      await City.insertMany(cityDocs);
     }
 
-    if (type === "city") {
-      const updatedCity = await City.findByIdAndUpdate(
-        id,
-        { $set: updateData },
-        { new: true, runValidators: true }
-      );
-      return res.status(200).json({ success: true, data: updatedCity });
-    }
-
-    res.status(400).json({ success: false, message: "Invalid type specified" });
+    res.status(200).json({ success: true, data: updatedState });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
-// Delete Region Logic
 export const deleteRegion = async (req, res) => {
   try {
     const { id } = req.params;
-    const { type } = req.query; // type: 'state' or 'city'
 
-    if (type === "state") {
-      // 1. Delete the State
-      const deletedState = await State.findByIdAndDelete(id);
-      if (!deletedState) return res.status(404).json({ message: "State not found" });
+    const deletedState = await State.findByIdAndDelete(id);
+    if (!deletedState) return res.status(404).json({ success: false, message: "State not found" });
+    await City.deleteMany({ regionId: id });
 
-      // 2. Cascade Delete: Remove all cities belonging to this state
-      await City.deleteMany({ regionId: id });
-
-      return res.status(200).json({ 
-        success: true, 
-        message: "State and all associated cities deleted successfully." 
-      });
-    }
-
-    if (type === "city") {
-      // 1. Find city to get the regionId before deleting
-      const city = await City.findById(id);
-      if (!city) return res.status(404).json({ message: "City not found" });
-
-      // 2. Delete the City
-      await City.findByIdAndDelete(id);
-
-      // 3. Decrement the citiesCount in the parent State
-      await State.findByIdAndUpdate(city.regionId, { $inc: { citiesCount: -1 } });
-
-      return res.status(200).json({ success: true, message: "City deleted successfully." });
-    }
-
-    res.status(400).json({ success: false, message: "Invalid type specified" });
+    res.status(200).json({ success: true, message: "Region and all cities deleted." });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
+
+export const deleteCityByState = async (req , res) =>{
+  const {id} = req.params
+  try {
+    const deletedCity = await City.findByIdAndDelete(id);
+    if (!deletedCity) return res.status(404).json({ success: false, message: "City not found" });
+    res.status(200).json({ success: true, message: "City deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+}

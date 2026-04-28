@@ -1,134 +1,186 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, Globe, Navigation, 
-  TrendingUp, Building2, Edit 
+  TrendingUp, Building2, Edit, MapPin, 
+  Plus, Eye, List
 } from 'lucide-react';
+import { useRegionsStore } from '../../../store/useRegionStore';
+import { statusStyles } from '../../../assets/assets';
 
 const ViewRegion = () => {
   const { regionId } = useParams();
   const navigate = useNavigate();
+  
+  // Connect to your Zustand Store
+  const { regions, cities, fetchCitiesByState, isLoading } = useRegionsStore();
 
-  // Mock Data
-  const region = {
-    id: regionId,
-    regionType: "South India",
-    state: "Kerala",
-    stateImage: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944",
-    status: "Active",
-    reach: "High",
-    cities: [
-      { cityName: "Munnar", imageUrl: "https://images.unsplash.com/photo-1510009489794-352fba39acd3", description: "Famous for its tea plantations and rolling hills." },
-      { cityName: "Alleppey", imageUrl: "https://images.unsplash.com/photo-1593181629936-11c609b8db9b", description: "Known for its beautiful backwaters and houseboat stays." },
-      { cityName: "Wayanad", imageUrl: "https://images.unsplash.com/photo-1595815771614-ade9d652a65d", description: "Green mountainous region with spice plantations." },
-      { cityName: "Thekkady", imageUrl: "https://images.unsplash.com/photo-1589133405670-578dc89f6e02", description: "Home to Periyar National Park and elephant sanctuaries." },
-      { cityName: "Varkala", imageUrl: "https://images.unsplash.com/photo-1584126307049-70154493f403", description: "Stunning cliffside beaches and coastal vibes." }
-    ]
-  };
+  // Find the specific state from the store
+  const region = useMemo(() => {
+    return regions.find(r => r._id === regionId);
+  }, [regions, regionId]);
+
+  useEffect(() => {
+    if (regionId) {
+      fetchCitiesByState(regionId);
+    }
+  }, [regionId, fetchCitiesByState]);
+
+  if (isLoading && !region) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#F7F7F7]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00A699]"></div>
+      </div>
+    );
+  }
+
+  if (!region) return <div className="p-10 text-center font-bold">Region not found.</div>;
 
   return (
     <motion.div 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
-      className="bg-[#F7F7F7] h-full flex flex-col overflow-hidden"
+      className="bg-[#F7F7F7] min-h-screen flex flex-col"
     >
       {/* Header Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate('/admin/regions')}
-            className="p-2 bg-white rounded-full shadow-sm text-gray-500 hover:text-[#00A699] transition-all"
+            className="p-3 bg-white rounded-2xl shadow-sm text-gray-500 hover:text-[#00A699] transition-all border border-gray-100"
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft size={20} />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">{region.state}</h1>
-            <p className="text-gray-500 text-sm flex items-center gap-1">
-              <Globe size={14} /> {region.regionType}
+            <h1 className="text-3xl font-black text-gray-900 tracking-tight">{region.stateName}</h1>
+            <p className="text-gray-400 text-xs font-black uppercase tracking-widest flex items-center gap-2 mt-1">
+              <Globe size={14} className="text-[#00A699]" /> {region.regionType} Territory
             </p>
           </div>
         </div>
 
-        <button 
-          onClick={() => navigate(`/admin/regions/${regionId}/edit`)}
-          className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-xl font-bold text-gray-700 hover:border-[#00A699] hover:text-[#00A699] transition-all shadow-sm"
-        >
-          <Edit size={18} /> Edit Details
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => navigate(`/admin/regions/${regionId}/edit`)}
+            className="flex items-center gap-2 px-6 py-3 bg-[#00A699] rounded-2xl font-black text-white hover:bg-[#008f84] transition-all shadow-lg shadow-teal-100"
+          >
+            <Edit size={18} /> Edit Region
+          </button>
+        </div>
       </div>
 
-      {/* Main Grid Container - Fixed Height */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1">
         
-        {/* Left: Summary Cards (Static) */}
+        {/* Left: Summary Panel */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="relative rounded-3xl overflow-hidden aspect-video shadow-lg">
-            <img src={region.stateImage} alt={region.state} className="w-full h-full object-cover" />
-            <div className="absolute top-4 right-4">
-              <span className="px-4 py-1.5 bg-white/90 backdrop-blur-md text-[#00A699] rounded-full text-xs font-bold shadow-sm">
+          <div className="relative rounded-xl overflow-hidden aspect-3/2 shadow-xl border-4 border-white">
+            <img 
+               src={region.stateImage} 
+               referrerPolicy="no-referrer" 
+               className="w-full h-full object-cover" 
+               alt="" 
+            />
+            <div className="absolute top-6 right-6">
+              <span className={`px-5 py-2 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl border border-white/20 
+                ${statusStyles[region.status]}`}>
                 {region.status}
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-              <TrendingUp className="text-[#00A699] mb-3" size={20} />
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Reach</p>
-              <p className="text-lg font-bold text-gray-800">{region.reach}</p>
-            </div>
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-              <Building2 className="text-[#00A699] mb-3" size={20} />
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cities</p>
-              <p className="text-lg font-bold text-gray-800">{region.cities.length}</p>
+          <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-6">
+            <h3 className="font-black text-gray-900 uppercase text-[10px] tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
+              <List size={16} className="text-[#00A699]"/> State Overview
+            </h3>
+            <p className="text-gray-500 text-sm leading-relaxed italic">
+              {region.overview || "No overview provided for this territory."}
+            </p>
+            
+            <div className="grid grid-cols-2 gap-4 pt-4">
+              <div className="bg-gray-50 p-4 rounded-2xl">
+                <TrendingUp className="text-[#00A699] mb-2" size={18} />
+                <p className="text-[9px] font-black text-gray-400 uppercase">Connectivity</p>
+                <p className="text-sm font-black text-gray-800">{region.reach}</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-2xl">
+                <Building2 className="text-[#00A699] mb-2" size={18} />
+                <p className="text-[9px] font-black text-gray-400 uppercase">Managed Cities</p>
+                <p className="text-sm font-black text-gray-800">{cities.length}</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right: Cities List (Scrollable) */}
-        <div className="lg:col-span-2 flex flex-col min-h-0 h-full">
-        <div className="flex items-center justify-between px-2 mb-4 shrink-0">
-            <h2 className="text-xl font-bold text-gray-800">Featured Cities</h2>
-            <span className="text-sm text-gray-400 font-medium">Internal Database</span>
-        </div>
+        {/* Right: City Cards with Places Management */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Active Cities</h2>
+            <span className="px-4 py-1 bg-teal-50 text-[#00A699] text-[10px] font-black rounded-full uppercase">
+              {cities.length} Total
+            </span>
+          </div>
 
-        <div className="flex-1 overflow-y-auto p-2 custom-scrollbar space-y-6 pb-6 
-                        h-auto max-h-[70vh] 
-                        min-h-[calc(100vh-220px)] ">
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {region.cities.map((city, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <AnimatePresence>
+              {cities.map((city) => (
                 <motion.div 
-                key={index}
-                whileHover={{ y: -5 }}
-                className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm group cursor-pointer"
+                  key={city._id}
+                  whileHover={{ y: -8 }}
+                  className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm group"
                 >
-                <div className="h-48 overflow-hidden relative">
+                  <div className="h-52 overflow-hidden relative">
                     <img 
-                    src={city.imageUrl} 
-                    alt={city.cityName} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                      src={city.cityImage} 
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                      alt=""
                     />
-                    <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-lg text-white text-xs font-bold">
-                    #{index + 1}
+                    <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
+                       <p className="text-white text-xs font-medium leading-tight">
+                         {city.overview}
+                       </p>
                     </div>
-                </div>
-                <div className="p-6">
-                    <h3 className="text-lg font-bold text-gray-800 mb-2">{city.cityName}</h3>
-                    <p className="text-sm text-gray-500 leading-relaxed line-clamp-2">
-                    {city.description}
-                    </p>
-                    <div className="mt-4 flex items-center gap-1 text-[#00A699] font-bold text-xs uppercase tracking-widest">
-                    <Navigation size={12} /> Explore More
-                    </div>
-                </div>
-                </motion.div>
-            ))}
-            </div>
-        </div>
-        </div>
+                  </div>
 
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <h3 className="text-xl font-black text-gray-900 leading-none">{city.cityName}</h3>
+                        <p className="text-[10px] font-black text-[#00A699] uppercase tracking-widest mt-2 flex items-center gap-1">
+                           <MapPin size={10}/> Rating: {city.rating || "5.0"}
+                        </p>
+                      </div>
+                    </div>
+
+                  {/* Places Management Sub-Actions */}
+                  <div className="flex gap-3 mt-8 border-t border-gray-50 pt-6">
+                    {[
+                      { label: 'View', icon: <Eye size={16} />, path: `/admin/regions/${region.stateName}/cities/${city._id}/places`, title: 'View Places' },
+                      { label: 'Add', icon: <Plus size={16} />, path: `/admin/regions/${region.stateName}/cities/${city._id}/placesadd`, title: 'Add Place' },
+                      { label: 'Setup', icon: <List size={16} />, path: `/admin/regions/${region.stateName}/cities/${city._id}/places/123344/edit`, title: 'Settings' }
+                    ].map((btn) => (
+                      <button
+                        key={btn.label}
+                        onClick={() => navigate(btn.path)}
+                        title={btn.title}
+                        className="flex-1 flex flex-col items-center justify-center gap-2 py-4 rounded-xl bg-slate-50 text-slate-400 hover:bg-[#00A699] hover:text-white transition-all duration-300 group/btn"
+                      >
+                        <div className="transition-transform duration-300 group-hover/btn:scale-110 group-hover/btn:-translate-y-0.5">
+                          {btn.icon}
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-widest leading-none">
+                          {btn.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
     </motion.div>
   );

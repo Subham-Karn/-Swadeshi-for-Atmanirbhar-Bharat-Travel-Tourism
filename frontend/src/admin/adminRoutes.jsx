@@ -9,6 +9,8 @@ import Users from "./pages/users";
 import Bookings from "./pages/bookings";
 import AddRegion from "./pages/region/AddRegion";
 import ViewRegion from "./pages/region/ViewRegion";
+import Places from "./pages/region/places/Places";
+import AddPlaces from "./pages/region/places/AddPlaces";
 const AdminRoute = () => {
   return (
     <Routes>
@@ -35,6 +37,9 @@ const AdminRoute = () => {
         <Route path="add" element={<AdminLayout><AddRegion/></AdminLayout>} />
         <Route path=":regionId/edit" element={<AdminLayout><AddRegion/></AdminLayout>} />
         <Route path=":regionId/view" element={<AdminLayout><ViewRegion/></AdminLayout>} />
+        <Route path=":regionstateName/cities/:cityId}/places" element={<AdminLayout><Places/></AdminLayout>} />
+        <Route path=":stateName/cities/:cityId}/places/add"  element={<AdminLayout><AddPlaces/></AdminLayout>} />
+        <Route path=":stateName/cities/:cityId}/places/:placeId/edit" element={<AdminLayout><AddPlaces/></AdminLayout>} />
         <Route path=":regionId/cities" element={"Regions Route 2"} />
       </Route>
 
@@ -62,9 +67,6 @@ const AdminRoute = () => {
         {/* Bookings sub routes */}
       </Route>
 
-
-      
-
       {/* Setting  */}
       <Route
         path="/setting"
@@ -89,7 +91,7 @@ const AdminLayout = ({ children }) => {
       {/* Main Content Area */}
       <main className="flex-1 h-screen overflow-y-auto overflow-x-hidden custom-scrollbar">
         {/* Inner wrapper for padding and max-width control */}
-        <div className="p-4 md:p-8 min-h-screen">
+        <div className="p-2 md:p-4 min-h-screen">
           {children}
         </div>
       </main>

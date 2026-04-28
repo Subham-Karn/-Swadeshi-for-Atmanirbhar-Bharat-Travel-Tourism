@@ -20,7 +20,7 @@ const CitySchema = new mongoose.Schema({
     cityImage: { type: String, required: true },
     isPopular: { type: Boolean, default: false },
     overview: { type: String, required: true },
-    bestTimeToVisit: { type: String, required: true },
+    bestTimeToVisit: { type: String, required: false },
     rating: { type: Number, default: 0, min: 0, max: 5 },
 },
     { timestamps: true }
