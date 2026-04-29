@@ -84,7 +84,7 @@ useEffect(() => {
       setFormData({
         regionType: region.regionType || "North",
         stateName: region.stateName || "",
-        stateImages: region.images || [], // Map backend 'images' to 'stateImages'
+        stateImages: region.stateImage || [], // Map backend 'images' to 'stateImages'
         stateOverview: region.overview || "",
         citiesCount: region.citiesCount || 0,
         status: region.status || "Active",
@@ -93,10 +93,12 @@ useEffect(() => {
         stateId: region._id,
         bestTimeToVisit: region.bestTimeToVisit || ""
       });
+      
       fetchCitiesByState(regionId);
     }
   }
 }, [regionId, regions, isEditMode, fetchCitiesByState]);
+
 
 // Sync Cities Data in Edit Mode
 useEffect(() => {

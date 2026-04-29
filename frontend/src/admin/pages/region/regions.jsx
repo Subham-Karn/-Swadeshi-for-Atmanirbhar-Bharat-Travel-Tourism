@@ -24,6 +24,7 @@ const Regions = () => {
 
   useEffect(() => {
     fetchStates();
+    document.title = "Bharat Darshan - Regions";
   }, [fetchStates]);
 
   return (

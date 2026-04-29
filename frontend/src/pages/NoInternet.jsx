@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { WifiOff, RefreshCw, Globe } from "lucide-react";
 
@@ -11,6 +11,11 @@ const NoInternet = () => {
       console.log("Still offline...");
     }
   };
+
+
+  useEffect(()=>{
+    document.title = "No Internet Connection";
+  })
 
   return (
     <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center p-6">
