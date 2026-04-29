@@ -12,7 +12,7 @@ const StateSchema = new mongoose.Schema({
         enum: ['North', 'South', 'East', 'West', 'Central', 'North-East'] 
     },
     stateName: { type: String, required: true, unique: true }, // Added unique
-    stateImage: { type: String, required: true },
+    stateImage: { type:[ String], required: true },
     citiesCount: { type: Number, required: true, default: 0 },
     status: { 
         type: String, 

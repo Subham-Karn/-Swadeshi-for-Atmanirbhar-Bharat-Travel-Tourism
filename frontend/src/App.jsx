@@ -16,9 +16,12 @@ import { Toaster } from 'react-hot-toast'
 import ProtectedRoute from './components/ProcetedRoute'
 import Unauthorized from './pages/Unauthorized.jsx'
 import DestinationDetails from './pages/destination/DestinationDetails.jsx'
+import NoInternet from './pages/NoInternet.jsx'
+import OfflineGuard from './components/OfflineGuard.jsx'
 const App = () => {
   return (
     <>
+      
       <Toaster 
         position="bottom-right"
         reverseOrder={false}
@@ -61,10 +64,11 @@ const App = () => {
           }
         }}
       />
+      <OfflineGuard>
       <Routes>
           {/* Home */}
           <Route path="/" element={<UserLayout><HomeRoute/></UserLayout>} />
-          
+          <Route path="/no-internet" element={<NoInternet />} />
           {/* Auth - Now toasts will work here too! */}
           <Route path="/auth/login" element={<Login/>} />
           <Route path="/auth/signup" element={<SignUp/>} />
@@ -85,6 +89,8 @@ const App = () => {
           <Route path='*' element={<Notfound />} />
           <Route path='/unauthorized' element={<Unauthorized />} />
       </Routes>
+      </OfflineGuard>
+      
     </>
   )
 }
