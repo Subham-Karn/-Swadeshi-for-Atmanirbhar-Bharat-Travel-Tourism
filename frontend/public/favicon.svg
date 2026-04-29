@@ -1,7 +1,7 @@
 <!-- public/favicon.svg -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 64 64">
   <!-- Blue Background -->
-  <rect width="64" height="64" fill="#2563eb"/>
+  <rect width="64" height="64" fill="#00A699" style="border-radius:10px"/>
 
   <!-- India Gate Icon (simplified) -->
   <g fill="white">
@@ -16,6 +16,6 @@
     <rect x="16" y="32" width="32" height="18"/>
     
     <!-- Arch cut -->
-    <rect x="26" y="34" width="12" height="16" fill="#2563eb" rx="6"/>
+    <rect x="26" y="34" width="12" height="16" fill="#00A699" rx="6"/>
   </g>
 </svg>
