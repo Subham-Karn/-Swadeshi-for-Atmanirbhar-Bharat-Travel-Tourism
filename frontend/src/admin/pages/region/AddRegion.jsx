@@ -98,18 +98,55 @@ useEffect(() => {
   }
 }, [regionId, regions, isEditMode, fetchCitiesByState]);
 
+const handleCitiesCountChange = (e) => {
+  const inputValue = e.target.value;
+  
+  // 1. Always update the count in formData so the input field doesn't feel "stuck"
+  // but if it's empty, we just store it as 0 or empty string for the UI
+  const count = parseInt(inputValue);
+  setFormData(prev => ({ ...prev, citiesCount: inputValue === "" ? "" : Math.max(0, count) }));
 
-// Sync Cities Data in Edit Mode
+  // 2. GUARD: If the user is currently typing (cleared the box) or entered invalid text,
+  // STOP here. Do not slice or reset the citiesData array.
+  if (inputValue === "" || isNaN(count)) {
+    return; 
+  }
+
+  const finalCount = Math.max(0, count);
+
+  setCitiesData(prev => {
+    const existingCities = [...prev];
+    if (finalCount > existingCities.length) {
+      const extraSlotsNeeded = finalCount - existingCities.length;
+      const newSlots = Array(extraSlotsNeeded).fill(null).map(() => ({ 
+        cityName: "", 
+        cityImages: [], 
+        overview: "", 
+        isPopular: false 
+      }));
+      return [...existingCities, ...newSlots];
+    } else if (finalCount < existingCities.length) {
+      return existingCities.slice(0, finalCount);
+    }
+    
+    return existingCities;
+  });
+};
 useEffect(() => {
-  if (isEditMode && cities.length > 0) {
+  if (isEditMode && cities && cities.length > 0) {
     const mappedCities = cities.map(c => ({
       cityName: c.cityName || "",
-      cityImages: c.cityImages || [], 
+      cityImages: c.cityImages || c.images || [], 
       overview: c.overview || "", 
-      isPopular: c.isPopular || false
+      isPopular: c.isPopular || false,
+      _id: c._id 
     }));
-    console.log(mappedCities);
+    
     setCitiesData(mappedCities);
+    setFormData(prev => ({ 
+      ...prev, 
+      citiesCount: mappedCities.length 
+    }));
   }
 }, [cities, isEditMode]);
 
@@ -131,28 +168,7 @@ useEffect(() => {
     setFormData((prev) => ({ ...prev, stateImages: links }));
     setActiveStateImgIdx(0); // Reset slider to first image
   };
-const handleCitiesCountChange = (e) => {
-  const count = Math.max(0, parseInt(e.target.value) || 0);
-  setFormData(prev => ({ ...prev, citiesCount: count }));
 
-  setCitiesData(prev => {
-    const newCities = [...prev];
-    if (count > newCities.length) {
-      for (let i = newCities.length; i < count; i++) {
-        // Fix: Initialize with images array
-        newCities.push({ 
-          cityName: "", 
-          cityImages: [], 
-          overview: "", 
-          isPopular: false 
-        });
-      }
-    } else {
-      newCities.splice(count);
-    }
-    return newCities;
-  });
-};
 
 const handleCityDataChange = (index, field, value) => {
   const updatedCities = [...citiesData];
@@ -191,6 +207,8 @@ const handleSubmit = async () => {
     } else {
       await createRegion(payload);
     }
+    localStorage.removeItem("pending_region_form");
+    localStorage.removeItem("pending_cities_form");
     toast.success(isEditMode ? "Region Updated" : "Region Created");
     setTimeout(() => navigate("/admin/regions"), 500);
   } catch (error) {
@@ -198,7 +216,6 @@ const handleSubmit = async () => {
     toast.error("Operation failed");
   }
 };
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -214,7 +231,7 @@ const handleSubmit = async () => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-200 bg-white/70 backdrop-blur-sm flex items-center justify-center"
           >
-            <div className="flex flex-col items-center gap-4 bg-white p-8 rounded-[3rem] shadow-2xl">
+            <div className="flex flex-col items-center gap-4 bg-white p-8 rounded-xl shadow-2xl">
               <Loader2 className="w-12 h-12 text-[#00A699] animate-spin" />
               <p className="font-black text-slate-900 tracking-tighter uppercase text-sm">
                 Processing Nodes...

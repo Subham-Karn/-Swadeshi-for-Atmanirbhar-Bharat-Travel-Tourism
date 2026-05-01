@@ -7,7 +7,8 @@ import TerritoryEditor from './TerritoryEditor';
 const CityNodeCard = ({ city, index, onCityChange }) => {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [activeImgIdx, setActiveImgIdx] = useState(0);
-
+   console.log(city);
+   
   const images = city.cityImages || city.images || [];
   
   const nextImg = (e) => {
