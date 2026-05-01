@@ -19,11 +19,9 @@ export const useRegionsStore = create((set, get) => ({
           regions: [...state.regions, data.data.state],
           cities: [...state.cities, data.data.city]
         }));
-        toast.success("Region created successfully!");
       }
     } catch (error) {
       const msg = error.response?.data?.message || "Failed to create region";
-      toast.error(msg);
       console.error(error);
     } finally {
       set({ isLoading: false });
@@ -65,10 +63,8 @@ updateRegion: async (id, payload) => {
         set((state) => ({
           regions: state.regions.map((r) => (r._id === id ? data.data : r))
         }));
-        toast.success("Changes Saved!");
       }
     } catch (error) {
-      toast.error("Update failed");
     } finally {
       set({ isLoading: false });
     }
@@ -83,10 +79,9 @@ updateRegion: async (id, payload) => {
         set((state) => ({
           regions: state.regions.filter((r) => r._id !== id)
         }));
-        toast.success("Region Deleted");
       }
     } catch (error) {
-      toast.error("Delete failed");
+      console.error(error);
     } finally {
       set({ isLoading: false });
     }

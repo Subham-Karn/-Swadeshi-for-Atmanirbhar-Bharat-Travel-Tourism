@@ -42,7 +42,7 @@ export const createRegion = async (req, res) => {
         regionType: stateDoc.regionType,
         cityName: item.cityName,
         cityImage: item.imageUrl, // Mapping frontend 'imageUrl' to backend 'cityImage'
-        overview: item.description, // Mapping frontend 'description' to backend 'overview'
+        overview: item.overview, // Mapping frontend 'description' to backend 'overview'
         isPopular: item.isPopular || false
       }))
     );
@@ -79,11 +79,10 @@ export const updateRegion = async (req, res) => {
   try {
     const { id } = req.params;
     const { state: stateData, cities: citiesArray, userId } = req.body;
-
     const updatedState = await State.findByIdAndUpdate(
       id,
       { $set: stateData },
-      { new: true, runValidators: true }
+      { returnDocument:"after", runValidators: true }
     );
 
     if (!updatedState) return res.status(404).json({ success: false, message: "State not found" });
@@ -96,7 +95,7 @@ export const updateRegion = async (req, res) => {
         regionId: id,
         regionType: updatedState.regionType,
         cityImage: city.imageUrl,
-        overview: city.description
+        overview: city.overview
       }));
       await City.insertMany(cityDocs);
     }

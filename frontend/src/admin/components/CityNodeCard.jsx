@@ -8,8 +8,8 @@ const CityNodeCard = ({ city, index, onCityChange }) => {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [activeImgIdx, setActiveImgIdx] = useState(0);
 
-  const images = city.images || [];
-
+  const images = city.cityImages || city.images || [];
+  
   const nextImg = (e) => {
     e.stopPropagation();
     setActiveImgIdx((prev) => (prev === images.length - 1 ? 0 : prev + 1));
@@ -31,7 +31,7 @@ const CityNodeCard = ({ city, index, onCityChange }) => {
       isOpen={isGalleryOpen}
       onClose={() => setIsGalleryOpen(false)}
       images={images}
-      onSync={(links) => onCityChange(index, "images", links)}
+      onSync={(links) => onCityChange(index, "cityImages", links)}
     />
 
     <div className="flex flex-col gap-8 w-full">
@@ -115,8 +115,8 @@ const CityNodeCard = ({ city, index, onCityChange }) => {
       {/* Bottom Row: Full Width Editor */}
       <div className="w-full pt-4 border-t border-slate-50">
         <TerritoryEditor
-          value={city.description}
-          onChange={(e) => onCityChange(index, "description", e.target.value)}
+          value={city.overview || city.description || ""}
+          onChange={(e) => onCityChange(index, "overview", e.target.value)}
         />
       </div>
 

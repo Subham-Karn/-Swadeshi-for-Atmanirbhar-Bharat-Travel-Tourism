@@ -1,18 +1,24 @@
 import { AnimatePresence , motion } from "framer-motion";
 import { Plus , X , ImageIcon , Trash2} from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatGoogleDriveUrl } from "../../util/formatGoogleDriveUrl";
 
 const MultiPhotoModal = ({ isOpen, onClose, images, onSync }) => {
-  const [tempLinks, setTempLinks] = useState(images || []);
-
-  const addField = () => setTempLinks([...tempLinks, ""]);
+const [tempLinks, setTempLinks] = useState([]);
   
   const updateLink = (index, val) => {
     const updated = [...tempLinks];
     updated[index] = formatGoogleDriveUrl(val);
     setTempLinks(updated);
   };
+  
+  useEffect(() => {
+    if (images) {
+      setTempLinks(images);
+    }
+  }, [images, isOpen]);
+
+  const addField = () => setTempLinks([...tempLinks, ""]);
 
   const removeLink = (index) => setTempLinks(tempLinks.filter((_, i) => i !== index));
 

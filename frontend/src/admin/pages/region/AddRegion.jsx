@@ -62,7 +62,6 @@ const AddRegion = () => {
   const [isStateGalleryOpen, setIsStateGalleryOpen] = useState(false);
   const [activeStateImgIdx, setActiveStateImgIdx] = useState(0);
 
-
   const [formData, setFormData] = useState({
     regionType: "North",
     stateName: "",
@@ -105,10 +104,11 @@ useEffect(() => {
   if (isEditMode && cities.length > 0) {
     const mappedCities = cities.map(c => ({
       cityName: c.cityName || "",
-      images: c.cityImages || [], 
-      description: c.overview || "", 
+      cityImages: c.cityImages || [], 
+      overview: c.overview || "", 
       isPopular: c.isPopular || false
     }));
+    console.log(mappedCities);
     setCitiesData(mappedCities);
   }
 }, [cities, isEditMode]);
@@ -142,8 +142,8 @@ const handleCitiesCountChange = (e) => {
         // Fix: Initialize with images array
         newCities.push({ 
           cityName: "", 
-          images: [], 
-          description: "", 
+          cityImages: [], 
+          overview: "", 
           isPopular: false 
         });
       }
@@ -169,11 +169,8 @@ const handleSubmit = async () => {
     userId: user?._id || user?.id,
     state: {
       regionType: formData.regionType,
-      stateName: formData.stateName,
-      // Map frontend 'stateImages' back to backend 'images'
-      images: formData.stateImages || [], 
-      // Primary image is usually the first one
-      stateImage: formData.stateImages?.[0] || "", 
+      stateName: formData.stateName, 
+      stateImage: formData.stateImages, 
       overview: formData.stateOverview,
       status: formData.status,
       reach: formData.reach,
@@ -183,13 +180,11 @@ const handleSubmit = async () => {
     },
     cities: citiesData.map(city => ({
       cityName: city.cityName,
-      cityImages: city.images || [], // Send as array
-      cityImage: city.images?.[0] || "", // Primary image
-      overview: city.description,
+      cityImages: city.cityImages || [], // Send as array
+      overview: city.overview,
       isPopular: city.isPopular || false
     }))
-  };
-
+  }; 
   try {
     if (isEditMode) {
       await updateRegion(regionId, payload);
