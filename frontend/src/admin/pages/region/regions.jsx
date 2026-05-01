@@ -174,7 +174,7 @@ const RegionsTable = ({ regionData = [], isLoading }) => {
               <div className="flex items-center gap-4">
                 <div className="relative shrink-0">
                   <img 
-                    src={region.stateImage} 
+                    src={region.stateImage[0]} 
                     referrerPolicy="no-referrer" 
                     className='w-14 h-14 md:w-12 md:h-12 rounded-xl object-cover shadow-md border-2 border-white' 
                     alt="" 
