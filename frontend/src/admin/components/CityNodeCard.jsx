@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ImageIcon, Star, ChevronLeft, ChevronRight, 
-  MapPin, AlignLeft, Info, Activity, 
-  Pen,
-  Pencil
+  MapPin, AlignLeft, Activity, Pencil, 
+  Layers, CheckCircle2, AlertCircle
 } from 'lucide-react';
-import { parseCustomSyntax } from '../../engine/useTextEngine'; // Ensure this path is correct
+import { parseCustomSyntax } from '../../engine/useTextEngine';
 
-const CityNodeCard = ({ city , onOpen }) => {
+const CityNodeCard = ({ city, onOpen }) => {
   const [activeImgIdx, setActiveImgIdx] = useState(0);
   const images = city.cityImages || city.images || [];
 
@@ -24,130 +23,115 @@ const CityNodeCard = ({ city , onOpen }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/60 relative mb-6 overflow-hidden group"
+      className="group bg-white border-b border-slate-100 hover:bg-slate-50/50 transition-all duration-300"
     >
-      {/* The overall min-height is now controlled and tighter */}
-      <div className="flex flex-col lg:flex-row w-full min-h-80 h-full">
+      <div className="flex flex-col lg:flex-row items-center gap-6 p-4">
         
-        {/* Left: Cinematic Media Core - Reduced width to 35% for a slimmer profile */}
-        <div className="lg:w-[38%] relative bg-slate-100 overflow-hidden border-r border-slate-50">
-          
-          {/* FIXED PENCIL BUTTON: Positioned top-left to avoid Trending Node conflict */}
-          <button 
-            onClick={() => onOpen(city)} 
-            className="absolute top-4 left-4 z-30 text-slate-600 opacity-0 group-hover:opacity-100 transition-all p-2 bg-white/90 backdrop-blur-md rounded-xl shadow-lg hover:bg-[#00A699] hover:text-white"
-          >
-            <Pencil size={16} />
-          </button>
-
-          <AnimatePresence mode="wait">
-            {images.length > 0 ? (
-              <motion.div 
-                key={activeImgIdx} 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }}
-                className="w-full h-full min-h-62.5 lg:h-full"
-              >
-                <img 
-                  src={images[activeImgIdx]} 
-                  referrerPolicy="no-referrer" 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                  alt={city.cityName} 
+        {/* 1. COMPACT MEDIA UNIT (Table Column) */}
+        <div className="w-full lg:w-48 shrink-0">
+          <div className="relative h-32 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
+            <AnimatePresence mode="wait">
+              {images.length > 0 ? (
+                <motion.img
+                  key={activeImgIdx}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  src={images[activeImgIdx]}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  alt={city.cityName}
+                  referrerPolicy="no-referrer"
                 />
-                
-                {/* Status Overlays */}
-                <div className="absolute inset-0 bg-linear-to-t from-slate-900/60 via-transparent to-transparent" />
-
-                {/* Asset Counter - More compact */}
-                <div className="absolute bottom-4 left-4 bg-black/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 flex items-center gap-2">
-                  <Activity size={12} className="text-teal-400" />
-                  <span className="text-[9px] font-black text-white uppercase tracking-widest">
-                    {activeImgIdx + 1} / {images.length}
-                  </span>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-slate-300">
+                  <ImageIcon size={24} strokeWidth={1} />
                 </div>
+              )}
+            </AnimatePresence>
 
-                {/* Navigation: Only shows on hover, more compact */}
-                {images.length > 1 && (
-                  <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={prevImg} className="p-1.5 bg-white/20 backdrop-blur-md rounded-lg text-white hover:bg-white hover:text-slate-900 transition-all">
-                      <ChevronLeft size={16} />
-                    </button>
-                    <button onClick={nextImg} className="p-1.5 bg-white/20 backdrop-blur-md rounded-lg text-white hover:bg-white hover:text-slate-900 transition-all">
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-                )}
-              </motion.div>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-slate-50 min-h-62.5">
-                <ImageIcon size={32} className="text-slate-200" />
+            {/* Slider Dots */}
+            {images.length > 1 && (
+              <div className="absolute bottom-2 inset-x-0 flex justify-center gap-1">
+                {images.slice(0, 5).map((_, i) => (
+                  <div key={i} className={`w-1 h-1 rounded-full ${i === activeImgIdx ? 'bg-white' : 'bg-white/40'}`} />
+                ))}
               </div>
             )}
-          </AnimatePresence>
-
-          {/* Popular Indicator */}
-          {city.isPopular && (
-            <div className="absolute top-4 right-4 bg-orange-500 text-white px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-2 z-20">
-              <Star size={12} fill="currentColor" />
-              <span className="text-[9px] font-black uppercase tracking-widest">Trending Node</span>
-            </div>
-          )}
+          </div>
         </div>
 
-        {/* Right: Intelligence Section - More compact padding */}
-        <div className="lg:w-[62%] p-6 lg:p-8 flex flex-col justify-between bg-white">
-          <div>
-            <div className="flex items-center gap-3 text-[#00A699] mb-2">
-              <div className="w-6 h-0.5 bg-[#00A699]/30" />
-              <MapPin size={14} />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Geographic Deployment</span>
-            </div>
-            
-            {/* Adjusted title size for better fit */}
-            <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none mb-1">
-              {city.cityName || "Unregistered"}<span className="text-[#00A699]">.</span>
+        {/* 2. IDENTITY BLOCK (Table Column) */}
+        <div className="flex-1 min-w-50">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">
+              {city.cityName || "Unregistered"}
             </h3>
-            <p className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em] mb-4">
-              Index: {city._id?.slice(-8) || "NULL-REF"}
-            </p>
-
-            {/* Content Box - Max height and line clamping to prevent card stretching */}
-            <div className="relative group/text">
-              <div className="flex items-center gap-2 text-slate-300 mb-2">
-                <AlignLeft size={12} />
-                <span className="text-[9px] font-black uppercase tracking-[0.2em]">Briefing</span>
-              </div>
-
-              <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 group-hover/text:border-teal-100 transition-all max-h-30 overflow-hidden relative">
-                <div className="text-slate-600 text-xs leading-relaxed line-clamp-3">
-                    {city.overview || city.description ? (
-                      parseCustomSyntax(city.overview || city.description)
-                    ) : (
-                      <span className="italic text-slate-400">Awaiting node documentation.</span>
-                    )}
-                  </div>
-                  {/* Fade out effect if text is long */}
-                  <div className="absolute bottom-0 left-0 w-full h-6 bg-linear-to-t from-slate-50/80 to-transparent" />
-              </div>
+            {city.isPopular && (
+              <Star size={12} className="text-orange-500 fill-orange-500" />
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <Activity size={12} className="text-slate-300" /> {city._id?.slice(-8) || "NO-REF"}
+            </div>
+            <div className="w-1 h-1 rounded-full bg-slate-200" />
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#00A699] uppercase tracking-widest">
+              <Layers size={12} /> {images.length} Assets
             </div>
           </div>
+        </div>
 
-          {/* Compact Footer */}
-          <div className="mt-4 flex items-center gap-6 border-t border-slate-50 pt-4">
-            <div className="flex flex-col">
-              <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mb-0.5">Status</span>
-              <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Operational</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mb-0.5">Priority</span>
-              <span className={`text-[10px] font-black uppercase tracking-widest ${city.isPopular ? 'text-orange-500' : 'text-slate-800'}`}>
-                {city.isPopular ? 'High' : 'Standard'}
-              </span>
+        {/* 3. INTELLIGENCE PREVIEW (Table Column) */}
+        <div className="hidden xl:block flex-2 max-w-md">
+          <div className="flex items-center gap-2 mb-1 text-slate-300">
+            <AlignLeft size={12} />
+            <span className="text-[9px] font-black uppercase tracking-widest">Briefing</span>
+          </div>
+          <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed italic">
+             {city.overview ? city.overview.replace(/[#*]/g, '') : "Awaiting documentation..."}
+          </p>
+        </div>
+
+        {/* 4. STATUS & PRIORITY (Table Column) */}
+        <div className="flex items-center gap-8 px-4 border-l border-slate-50">
+          <div className="flex flex-col">
+            <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mb-1">Deployment</span>
+            <div className="flex items-center gap-1.5">
+               <CheckCircle2 size={12} className="text-[#00A699]" />
+               <span className="text-[10px] font-black text-slate-700 uppercase">Active</span>
             </div>
           </div>
+          <div className="flex flex-col">
+            <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mb-1">Priority</span>
+            <span className={`text-[10px] font-black uppercase ${city.isPopular ? 'text-orange-500' : 'text-slate-400'}`}>
+              {city.isPopular ? 'High' : 'Normal'}
+            </span>
+          </div>
+        </div>
+
+        {/* 5. ACTION UNIT */}
+        <div className="flex items-center gap-2">
+           <button 
+             onClick={(e) => { e.stopPropagation(); prevImg(e); }}
+             className="p-2 hover:bg-slate-100 rounded-full text-slate-300 hover:text-slate-900 transition-colors"
+           >
+             <ChevronLeft size={18} />
+           </button>
+           <button 
+             onClick={(e) => { e.stopPropagation(); nextImg(e); }}
+             className="p-2 hover:bg-slate-100 rounded-full text-slate-300 hover:text-slate-900 transition-colors"
+           >
+             <ChevronRight size={18} />
+           </button>
+           <div className="w-px h-8 bg-slate-100 mx-2" />
+           <button 
+             onClick={() => onOpen(city)}
+             className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-[#00A699] hover:border-[#00A699] hover:shadow-lg hover:shadow-teal-100/50 transition-all active:scale-95"
+           >
+             <Pencil size={18} />
+           </button>
         </div>
       </div>
     </motion.div>

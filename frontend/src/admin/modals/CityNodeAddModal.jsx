@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"; // Added useEffect
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Building2, ImageIcon, Star, Save, Plus, ChevronLeft, ChevronRight } from "lucide-react";
-import TerritoryEditor from "../components/TerritoryEditor";
+import TextEditor from "../components/TextEditor";
 import MultiPhotoModal from "./MultiPhotoModal";
 
 const CityNodeAddModal = ({ isOpen, onClose, onAdd, initialData }) => {
@@ -65,13 +65,13 @@ const CityNodeAddModal = ({ isOpen, onClose, onAdd, initialData }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-110 flex items-center justify-center p-4 md:p-10">
+        <div className="fixed inset-0 z-110 flex items-center justify-center ">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-900/60 "
           />
 
           <MultiPhotoModal
@@ -85,7 +85,7 @@ const CityNodeAddModal = ({ isOpen, onClose, onAdd, initialData }) => {
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            className="relative w-full max-w-4xl bg-[#F7F7F7] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            className="relative w-full max-w-4xl bg-[#F7F7F7] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
           >
             {/* Header */}
             <div className="bg-white p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
@@ -154,7 +154,7 @@ const CityNodeAddModal = ({ isOpen, onClose, onAdd, initialData }) => {
                   
                   <div className="absolute bottom-5 right-8 pointer-events-none z-20">
                     <p className="text-white font-black text-3xl uppercase drop-shadow-2xl italic tracking-tighter opacity-90 text-right">
-                      {cityData.cityName || "Node ID"}
+                      {cityData.cityName || "New City"}
                     </p>
                   </div>
                 </div>
@@ -181,13 +181,13 @@ const CityNodeAddModal = ({ isOpen, onClose, onAdd, initialData }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Node Status</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">City Popularity</label>
                   <div 
                     onClick={() => setCityData({ ...cityData, isPopular: !cityData.isPopular })}
                     className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all ${cityData.isPopular ? 'bg-orange-50 border-orange-200 shadow-inner' : 'bg-white border-transparent shadow-sm'}`}
                   >
                     <span className={`font-bold text-xs uppercase tracking-tight ${cityData.isPopular ? 'text-orange-600' : 'text-slate-400'}`}>
-                      {cityData.isPopular ? "Popular Destination" : "Standard Node"}
+                      {cityData.isPopular ? "Popular City" : "Normal City"}
                     </span>
                     <div className={`w-10 h-5 rounded-full relative transition-colors ${cityData.isPopular ? 'bg-orange-500' : 'bg-slate-200'}`}>
                       <motion.div 
@@ -198,14 +198,11 @@ const CityNodeAddModal = ({ isOpen, onClose, onAdd, initialData }) => {
                   </div>
                 </div>
               </div>
-
-              <div className="space-y-2 pt-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Node Overview (Custom Syntax)</label>
-                <TerritoryEditor
+                <TextEditor
+                  title="City Overview"
                   value={cityData.overview}
                   onChange={(e) => setCityData({ ...cityData, overview: e.target.value })}
                 />
-              </div>
             </div>
 
             {/* Footer */}
@@ -222,7 +219,7 @@ const CityNodeAddModal = ({ isOpen, onClose, onAdd, initialData }) => {
                 className="flex-2 py-4 bg-[#00A699] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-teal-100 hover:bg-[#008f84] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {initialData ? <Save size={18} /> : <Plus size={18} />} 
-                {initialData ? "Apply Changes" : "Add Node to Territory"}
+                {initialData ? "Apply Changes" : "Add Cities to Region"}
               </button>
             </div>
           </motion.div>

@@ -22,7 +22,7 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import StatePickerModal from "../../modals/StatePickerModal";
 import MultiPhotoModal from "../../modals/MultiPhotoModal";
 import CityNodeCard from "../../components/CityNodeCard";
-import TerritoryEditor from "../../components/TerritoryEditor";
+import TextEditor from "../../components/TextEditor";
 import CityNodeAddModal from "../../modals/CityNodeAddModal";
 
 const regionTypeOptions = [
@@ -73,7 +73,7 @@ const AddRegion = () => {
     stateId: null,
   });
 
-  // 1. SYNC: Load State/Territory Data in Edit Mode
+  // 1. SYNC: Load State/Region Data in Edit Mode
   useEffect(() => {
     if (isEditMode && regionId && regions.length > 0) {
       const region = regions.find((r) => r._id === regionId);
@@ -99,7 +99,7 @@ const AddRegion = () => {
     }
   }, [regionId, regions, isEditMode, fetchCitiesByState]);
 
-  // 2. SYNC: Load Cities (Nodes) in Edit Mode
+  // 2. SYNC: Load Cities (Cities) in Edit Mode
   useEffect(() => {
     if (isEditMode && cities?.length > 0) {
       const mappedCities = cities.map((c) => ({
@@ -126,7 +126,7 @@ const AddRegion = () => {
       stateId: selected._id || null,
     }));
     setIsModalOpen(false);
-    toast.success(`Node Target: ${selected.stateName}`);
+    toast.success(`Selected Target: ${selected.stateName}`);
   }, []);
 
   const handleStateGallerySync = (links) => {
@@ -194,7 +194,7 @@ const handleAddNewNode = (updatedCity) => {
         await createRegion(payload);
       }
       toast.success(
-        isEditMode ? "Configuration Updated" : "Territory Published",
+        isEditMode ? "Configuration Updated" : "Region Published",
       );
       setTimeout(() => navigate("/admin/regions"), 500);
     } catch (error) {
@@ -267,7 +267,7 @@ const handleAddNewNode = (updatedCity) => {
             ) : (
               <Save size={18} />
             )}
-            {isEditMode ? "Save Changes" : "Publish Territory"}
+            {isEditMode ? "Save Changes" : "Publish Region"}
           </button>
         </div>
 
@@ -282,7 +282,7 @@ const handleAddNewNode = (updatedCity) => {
                 {isEditMode ? "Edit Node" : "New Node"}
               </h2>
               <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2 ml-1">
-                Integrated Territory Controller
+                Integrated Region Controller
               </p>
             </div>
 
@@ -413,7 +413,7 @@ const handleAddNewNode = (updatedCity) => {
                           : "text-slate-300 font-bold"
                       }
                     >
-                      {formData.stateName || "Assign Territory..."}
+                      {formData.stateName || "Assign Region..."}
                     </span>
                     <Search
                       size={16}
@@ -459,7 +459,8 @@ const handleAddNewNode = (updatedCity) => {
           </div>
 
           <div className="mt-10 pt-8 border-t border-slate-50">
-            <TerritoryEditor
+            <TextEditor
+              title="Region Overview"
               value={formData.stateOverview}
               onChange={(e) =>
                 setFormData((p) => ({ ...p, stateOverview: e.target.value }))
@@ -468,11 +469,11 @@ const handleAddNewNode = (updatedCity) => {
           </div>
         </section>
 
-        {/* CITY NODES SECTION */}
+        {/* CITY Cities SECTION */}
         <div className="space-y-8 pb-20">
           <div className="flex items-center justify-between px-4">
             <h3 className="text-3xl font-black text-slate-900 tracking-tighter flex items-center gap-3">
-              <Building2 size={28} className="text-[#00A699]" /> Active Node
+              <Building2 size={28} className="text-[#00A699]" /> Active City Node
               Matrix ({citiesData.length})
             </h3>
             <button

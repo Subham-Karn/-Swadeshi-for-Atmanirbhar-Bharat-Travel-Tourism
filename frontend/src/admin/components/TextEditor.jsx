@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Type, List, Italic, Eye, Code, Info } from 'lucide-react';
 import { parseCustomSyntax } from '../../engine/useTextEngine';
 
-const TerritoryEditor = ({ value, onChange }) => {
+const TextEditor = ({ value, onChange , title}) => {
   const [isPreview, setIsPreview] = useState(false);
 
   // Helper to inject syntax at cursor position
@@ -30,7 +30,7 @@ const TerritoryEditor = ({ value, onChange }) => {
       {/* 1. Header & Toolbar */}
       <div className="flex items-center justify-between px-2">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-          Territory Overview
+          {title || "NA Overview"}
         </label>
         
         <div className="flex bg-white rounded-xl p-1 shadow-sm border border-gray-100 gap-1">
@@ -100,4 +100,4 @@ const TerritoryEditor = ({ value, onChange }) => {
   );
 };
 
-export default TerritoryEditor;
+export default TextEditor;
