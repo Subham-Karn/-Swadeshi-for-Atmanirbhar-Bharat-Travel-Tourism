@@ -145,7 +145,7 @@ const getProfileName  = (name = "" ) =>{
   return (
     <>
       {/* 1. MOBILE TRIGGER BUTTON (Visible only on mobile) */}
-      <div className="md:hidden fixed top-2 right-4 z-40">
+      <div className="md:hidden fixed top-2 right-4 z-90">
         <button 
           onClick={() => setIsMobileOpen(true)}
           className="p-3 bg-white shadow-md border border-gray-200 rounded-full text-[#00A699]"
@@ -162,7 +162,7 @@ const getProfileName  = (name = "" ) =>{
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsMobileOpen(false)}
-            className="fixed inset-0 bg-black/50 z-60 md:hidden "
+            className="fixed inset-0 bg-black/50 z-40 md:hidden "
           />
         )}
       </AnimatePresence>
@@ -175,7 +175,7 @@ const getProfileName  = (name = "" ) =>{
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed top-0 left-0 h-screen w-70 bg-white z-70 flex flex-col shadow-2xl md:hidden"
+            className="fixed top-0 left-0 h-screen w-70 bg-white z-200 flex flex-col shadow-2xl md:hidden"
           >
             {navContent}
           </motion.div>

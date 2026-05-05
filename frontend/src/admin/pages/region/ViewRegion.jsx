@@ -12,7 +12,7 @@ import { parseCustomSyntax } from '../../../engine/useTextEngine';
 import { formatDateTime } from '../../../util/formatDateTime';
 import { renderStars } from '../../../util/renderStars';
 
-/* ─── Flipkart-style Lightbox ─── */
+/* ─── Lightbox ─── */
 const Lightbox = ({ images, activeIndex, onClose, onNav }) => {
   const [zoomed, setZoomed] = useState(false);
 
@@ -131,7 +131,7 @@ const Lightbox = ({ images, activeIndex, onClose, onNav }) => {
 };
 
 /* ─── City Card ─── */
-const CityCard = ({ city, regionName, navigate }) => (
+const CityCard = ({ city, stateName, navigate }) => (
   
   <motion.div
     whileHover={{ y: -5, boxShadow: '0 20px 48px rgba(0,166,153,0.12)' }}
@@ -162,7 +162,7 @@ const CityCard = ({ city, regionName, navigate }) => (
     <div className="p-4">
       <div className="flex gap-2">
         <button
-          onClick={() => navigate(`/admin/regions/${regionName}/cities/${city._id}/places`)}
+          onClick={() => navigate(`/admin/regions/${stateName}/cities/${city?.cityName}/${city._id}/places`)}
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
           style={{ background: '#f0faf9', color: '#00A699', border: '1px solid #c8ebe9' }}
           onMouseEnter={e => { e.currentTarget.style.background = '#00A699'; e.currentTarget.style.color = '#fff'; }}
@@ -171,7 +171,7 @@ const CityCard = ({ city, regionName, navigate }) => (
           <Eye size={13} /> View
         </button>
         <button
-          onClick={() => navigate(`/admin/regions/${regionName}/cities/${city._id}/placesadd`)}
+          onClick={() => navigate(`/admin/regions/${stateName}/cities/${city?.cityName}/${city._id}/places/add`)}
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
           style={{ background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa' }}
           onMouseEnter={e => { e.currentTarget.style.background = '#ea580c'; e.currentTarget.style.color = '#fff'; }}
@@ -180,7 +180,7 @@ const CityCard = ({ city, regionName, navigate }) => (
           <Plus size={13} /> Add
         </button>
         <button
-          onClick={() => navigate(`/admin/regions/${regionName}/cities/${city._id}/edit`)}
+          onClick={() => navigate(`/admin/regions/${stateName}/cities/${city?.cityName}/${city._id}/edit`)}
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
           style={{ background: '#f8f8f8', color: '#555', border: '1px solid #e5e5e5' }}
           onMouseEnter={e => { e.currentTarget.style.background = '#1a1a1a'; e.currentTarget.style.color = '#fff'; }}
@@ -451,7 +451,7 @@ const ViewRegion = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {cities.map((city) => (
                   
-                  <CityCard key={city._id} city={city} regionName={region.stateName} navigate={navigate} />
+                  <CityCard key={city._id} city={city} stateName={region.stateName} navigate={navigate} />
                 ))}
               </div>
             </section>

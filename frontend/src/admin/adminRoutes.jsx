@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Dashboard from "./pages/dashboard";
 import Regions from "./pages/region/regions";
 import Slider from "./components/Slider";
@@ -10,91 +10,38 @@ import Bookings from "./pages/bookings";
 import AddRegion from "./pages/region/AddRegion";
 import ViewRegion from "./pages/region/ViewRegion";
 import Places from "./pages/region/places/Places";
+import AdminLayout from "./components/AdminLayout"
 import AddPlaces from "./pages/region/places/AddPlaces";
 const AdminRoute = () => {
   return (
     <Routes>
-      <Route index element={<Navigate to="/admin/dashboard" replace />} />
-      <Route
-        path="dashboard"
-        element={
-          <AdminLayout>
-            <Dashboard />
-          </AdminLayout>
-        }
-      />
-       {/* Users */}
-      <Route path="users" element={<AdminLayout><Users/></AdminLayout>}>
-        {/* users sub routes */}
-      </Route>
+      <Route path="/" element={<Navigate to="dashboard" />} />
 
-      {/* Regions */}
-      <Route
-        path="regions"
-        
-      >
-        <Route index element={<AdminLayout><Regions/></AdminLayout>} />
-        <Route path="add" element={<AdminLayout><AddRegion/></AdminLayout>} />
-        <Route path=":regionId/edit" element={<AdminLayout><AddRegion/></AdminLayout>} />
-        <Route path=":regionId/view" element={<AdminLayout><ViewRegion/></AdminLayout>} />
-        <Route path=":regionstateName/cities/:cityId}/places" element={<AdminLayout><Places/></AdminLayout>} />
-        <Route path=":stateName/cities/:cityId}/places/add"  element={<AdminLayout><AddPlaces/></AdminLayout>} />
-        <Route path=":stateName/cities/:cityId}/places/:placeId/edit" element={<AdminLayout><AddPlaces/></AdminLayout>} />
-        <Route path=":regionId/cities" element={"Regions Route 2"} />
-      </Route>
+      <Route element={<AdminLayout />}>
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="users" element={<Users />} />
 
-      {/* Trips */}
-      <Route
-        path="trips"
-        element={
-          <AdminLayout>
-            <Trips />
-          </AdminLayout>
-        }
-      >
-        {/* Trips sub routes */}
-      </Route>
+        <Route path="regions">
+          <Route index element={<Regions />} />
+          <Route path="add" element={<AddRegion />} />
+          <Route path=":regionId/edit" element={<AddRegion />} />
+          <Route path=":regionId/view" element={<ViewRegion />} />
+          <Route path=":stateName/cities/:cityName/:cityId">
+            <Route path="places">
+              <Route index element={<Places />} />
+              <Route path="add" element={<AddPlaces />} />
+              <Route path=":placeId/edit" element={<AddPlaces />} />
+            </Route>
+          </Route>
 
-      {/* Bookings */}
-      <Route
-        path="bookings"
-        element={
-          <AdminLayout>
-            <Bookings />
-          </AdminLayout>
-        }
-      >
-        {/* Bookings sub routes */}
-      </Route>
+        </Route>
 
-      {/* Setting  */}
-      <Route
-        path="/setting"
-        element={
-          <AdminLayout>
-            <Setting />
-          </AdminLayout>
-        }
-      />
+        <Route path="trips" element={<Trips />} />
+        <Route path="bookings" element={<Bookings />} />
+        <Route path="setting" element={<Setting />} />
+      </Route>
     </Routes>
   );
 };
 
 export default AdminRoute;
-
-const AdminLayout = ({ children }) => {
-  return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#F7F7F7]">
-      {/* Sidebar - Fixed height, no internal overflow unless nav is long */}
-      <Slider />
-
-      {/* Main Content Area */}
-      <main className="flex-1 h-screen overflow-y-auto overflow-x-hidden custom-scrollbar">
-        {/* Inner wrapper for padding and max-width control */}
-        <div className="p-2 md:p-4 min-h-screen">
-          {children}
-        </div>
-      </main>
-    </div>
-  );
-};

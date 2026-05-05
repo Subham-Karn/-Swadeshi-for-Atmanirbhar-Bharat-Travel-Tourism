@@ -4,6 +4,7 @@ import cors from "cors";
 import connectDb from "./config/dbConfig.js";
 import AuthRoutes from "./routes/AuthRoutes.js";
 import RegionRoutes from "./routes/RegionRoutes.js";
+import PlaceRoutes from "./routes/PlaceRoute.js";
 const app = express();
 connectDb();
 const PORT = process.env.PORT;
@@ -48,6 +49,7 @@ app.get("/" , (req , res)=>{
 
 app.use("/api/auth" , AuthRoutes);
 app.use("/api/regions" , RegionRoutes)
+app.use("/api/places" , PlaceRoutes)
 
 app.listen(PORT , ()=>{
     console.log(`http://localhost:${PORT}`);
