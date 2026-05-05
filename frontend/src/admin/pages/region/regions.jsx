@@ -40,7 +40,7 @@ const Regions = () => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => navigate(`/admin/regions/add`)}
-          className='flex items-center gap-2 bg-[#00A699] text-white px-6 py-3 rounded-2xl shadow-lg shadow-teal-100 font-bold'
+          className='flex items-center gap-2 bg-[#00A699]  text-white px-6 py-3 rounded-2xl shadow-lg shadow-teal-100 font-bold'
         >
           <MapPlus size={20} />
           <span className='hidden sm:inline'>Add Region</span>
@@ -50,13 +50,13 @@ const Regions = () => {
       <RegionStats />
 
       {/* Filter Bar */}
-      <div className="mt-8 flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+      <div className="mt-8 flex flex-col md:flex-row  gap-4 items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
         <div className="relative w-full flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input 
             type="text"
             placeholder="Search state..."
-            className="w-full pl-12 pr-4 py-3 rounded-xl border border-transparent bg-gray-50 focus:bg-white focus:border-[#00A699] outline-none font-medium transition-all"
+            className="w-full pl-12 pr-4 py-3  rounded-xl border border-transparent bg-gray-50 focus:bg-white focus:border-[#00A699] outline-none font-medium transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -159,7 +159,7 @@ const RegionsTable = ({ regionData = [], isLoading }) => {
       {/* Main Container */}
       <div className="space-y-4 md:space-y-0 md:bg-white md:rounded-b md:border md:border-gray-100 md:shadow-sm md:divide-y md:divide-gray-50">
         {regionData.length === 0 && !isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[2.5rem]">
+          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl">
             <FilterX size={64} strokeWidth={1} className="mb-4 text-gray-200" />
             <p className="font-bold text-gray-400">No matching regions found</p>
           </div>

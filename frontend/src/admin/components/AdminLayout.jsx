@@ -7,11 +7,7 @@ const AdminLayout = () => {
 
   return (
         <div className="flex h-screen w-full bg-[#F7F7F7] overflow-hidden">
-        
-        {/* Sidebar (Fixed) */}
-        <div className="h-screen sticky top-0">
-            <Slider />
-        </div>
+        <Slider />
 
         {/* Main Content */}
         <main className="flex-1 h-screen overflow-y-auto">
