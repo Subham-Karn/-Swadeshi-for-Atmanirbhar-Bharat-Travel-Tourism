@@ -1,7 +1,8 @@
 import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, EffectFade } from 'swiper/modules';
-import { Plus, Calendar, Navigation, Info, Star } from 'lucide-react';
+import { Plus, Calendar, Navigation, Info, Star, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const StateHeader = ({ 
   stateName = "Unknown",
@@ -15,66 +16,82 @@ const StateHeader = ({
   isPopular = false,
   onAddCity = () => {} 
 }) => {
+  const navigate = useNavigate();
+
   return (
-    <header className="max-w-8xl mx-auto px-4 mb-4">
-      <div className="bg-white shadow-lg shadow-gray-200/40 rounded-2xl p-3 border border-gray-100 flex flex-col md:flex-row gap-4 items-center">
+    <header className="max-w-8xl mx-auto px-4 mb-6 font-sans">
+      {/* Top Action Bar */}
+      <div className="flex items-center justify-between mb-4">
+        <button 
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-500 hover:text-[#00A699] transition-colors group"
+        >
+          <div className="p-2 rounded-lg group-hover:bg-[#00A699]/10">
+            <ArrowLeft className="w-5 h-5" />
+          </div>
+          <span className="text-sm font-bold uppercase tracking-widest">Back</span>
+        </button>
+
+        <button 
+          onClick={onAddCity}
+          className="flex items-center gap-2 bg-[#00A699] hover:bg-[#008c82] text-white px-5 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-lg shadow-[#00A699]/20 active:scale-95"
+        >
+          <Plus size={18} />
+          <span className="hidden sm:inline uppercase tracking-tighter">Add City</span>
+        </button>
+      </div>
+
+      {/* Main Info Card */}
+      <div className="bg-white shadow-xl shadow-gray-200/50 rounded-2xl p-4 border border-gray-100 flex flex-col md:flex-row gap-6 items-center">
         
-        {/* --- LEFT: Compact Square Swiper --- */}
-        <div className="w-full md:w-40 lg:w-48 h-32 md:h-32 rounded-xl overflow-hidden shrink-0 relative group shadow-sm">
+        {/* --- LEFT: Image Slider --- */}
+        <div className="w-full md:w-44 lg:w-52 h-40 md:h-36 rounded-xl overflow-hidden shrink-0 relative group shadow-inner">
           <Swiper
             modules={[Autoplay, EffectFade]}
             effect="fade"
             autoplay={{ delay: 3000, disableOnInteraction: false }}
             className="h-full w-full"
           >
-            {stateImage.map((img, i) => (
-              <SwiperSlide key={i}>
-                <img src={img} className="w-full h-full object-cover" alt={stateName} />
-              </SwiperSlide>
-            ))}
+            {stateImage.length > 0 ? (
+                stateImage.map((img, i) => (
+                <SwiperSlide key={i}>
+                    <img src={img} className="w-full h-full object-cover" alt={stateName} />
+                </SwiperSlide>
+                ))
+            ) : (
+                <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">No Image</div>
+            )}
           </Swiper>
-          <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-lg flex items-center gap-1 border border-white/20">
-            <Star size={10} className="fill-amber-400 text-amber-400" />
-            <span className="text-[10px] font-black text-gray-800">{rating}</span>
+          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm border border-gray-100">
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <span className="text-[11px] font-black text-gray-800">{rating}</span>
           </div>
         </div>
 
-        {/* --- RIGHT: Information Section --- */}
+        {/* --- RIGHT: Information --- */}
         <div className="flex-1 flex flex-col justify-center min-w-0 w-full">
           
-          {/* Top Line: Badges & Title & Button */}
-          <div className="flex justify-between items-center mb-1">
-            <div className="flex flex-col">
-               <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[#00A699] text-[9px] font-black uppercase tracking-widest">
-                  {regionType} India
-                </span>
-                {isPopular && <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
-              </div>
-              <h1 className="text-2xl md:text-3xl font-black text-[#0F172A] tracking-tighter uppercase leading-none">
-                {stateName} <span className="text-[#00A699] lowercase italic font-serif font-normal text-xl">registry</span>
-              </h1>
+          <div className="mb-2">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[#00A699] text-[10px] font-black uppercase tracking-[0.2em] bg-[#00A699]/5 px-2 py-0.5 rounded">
+                {regionType} India
+              </span>
+              {isPopular && <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
             </div>
-
-            <button 
-              onClick={onAddCity}
-              className="flex items-center gap-2 bg-[#00A699] hover:bg-[#008c82] text-white px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-md shadow-[#00A699]/20 active:scale-95"
-            >
-              <Plus size={16} />
-              <span className="hidden sm:inline uppercase tracking-tighter">Add City</span>
-            </button>
+            <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter uppercase leading-none">
+              {stateName}
+            </h1>
           </div>
 
-          {/* Middle: Description (Limited to 1 line to save height) */}
-          <p className="text-gray-500 text-xs md:text-sm font-medium line-clamp-1 mb-3">
+          <p className="text-gray-500 text-sm font-medium line-clamp-1 mb-4 border-l-2 border-[#00A699]/20 pl-3">
             {overview}
           </p>
 
-          {/* Bottom: Compact Data Stats (No borders, very slim) */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <CompactStat icon={Calendar} label="Season" value={bestTimeToVisit} />
+          {/* Bottom Stats */}
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+            <CompactStat icon={Calendar} label="Best Time" value={bestTimeToVisit} />
             <CompactStat icon={Navigation} label="Reach" value={reach} />
-            <CompactStat icon={Info} label="Status" value={`${citiesCount} Active`} />
+            <CompactStat icon={Info} label="Nodes" value={`${citiesCount} Active`} />
           </div>
 
         </div>
@@ -85,11 +102,13 @@ const StateHeader = ({
 
 // Slim Helper for Stats
 const CompactStat = ({ icon: Icon, label, value }) => (
-  <div className="flex items-center gap-2 group/item">
-    <Icon size={14} className="text-[#00A699]" />
-    <div className="flex items-baseline gap-1.5">
-      <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">{label}:</span>
-      <span className="text-xs font-bold text-gray-800">{value}</span>
+  <div className="flex items-center gap-3">
+    <div className="bg-gray-50 p-2 rounded-lg text-[#00A699]">
+        <Icon size={18} />
+    </div>
+    <div className="flex flex-col">
+      <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">{label}</span>
+      <span className="text-xs font-bold text-gray-800 leading-none">{value}</span>
     </div>
   </div>
 );

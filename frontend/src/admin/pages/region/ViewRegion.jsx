@@ -13,6 +13,7 @@ import {
   Eye,
   SquarePen,
   Trash2,
+  Building2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 // Swiper Styles
@@ -52,7 +53,7 @@ const Viewcity = () => {
   }, [citiesData, filterType]);
 
   return (
-    <div className="w-full min-h-screen font-sans">
+    <div className="w-full min-h-screen font-sans overflow-y-hidden">
       {/* Header */}
       <StateHeader {...state} onAddCity={handleAdd} />
       {/* ─── FILTER TOOLBAR ─── */}
@@ -85,23 +86,49 @@ const Viewcity = () => {
           )}
         </select>
       </div>
-      {/*City Cards */}
-      <AnimatePresence mode="popLayout" initial={false}>
-        <div className="flex flex-col gap-2 w-full h-70 overflow-y-auto">
-          {filteredCities.map((city, idx) => (
-            <AdminStateCard
-              key={city._id}
-              city={city}
-              index={idx}
-              onDelete={() => openDeleteModal(region)}
-              onEdit={() => navigate(`/admin/regions/${region._id}/edit`)}
-              onView={() =>
-                navigate(`/admin/regions/${region._id}/view`, { state: region })
-              }
-            />
-          ))}
+      {/* City Cards Container */}
+      <div className="max-w-8xl mx-auto px-4 mt-6">
+        <div className="flex items-center justify-between mb-4 px-2">
+          <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+            Registered Cities ({filteredCities.length})
+          </h2>
         </div>
-      </AnimatePresence>
+
+        <div className="h-112.5 overflow-y-auto pr-2 custom-scrollbar">
+          <AnimatePresence mode="popLayout" initial={false}>
+            {filteredCities.length === 0 ? (
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                className="flex flex-col items-center justify-center h-full bg-white rounded-3xl border-2 border-dashed border-slate-100"
+              >
+                <div className="p-4 bg-slate-50 rounded-full mb-3 text-slate-300">
+                  <Building2 size={32} />
+                </div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  No Cities available in this state
+                </span>
+                <p className="text-[9px] text-slate-300 font-bold uppercase mt-1">
+                  Try adjusting your search or add a new city
+                </p>
+              </motion.div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {filteredCities.map((city, idx) => (
+                  <AdminStateCard
+                    key={city._id}
+                    city={city}
+                    index={idx}
+                    onDelete={() => openDeleteModal(city)} // Ensure this variable name is correct
+                    onEdit={() => navigate(`/admin/cities/${city._id}/edit`)}
+                    onView={() => navigate(`/admin/cities/${city._id}/view`, { state: city })}
+                  />
+                ))}
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
       {isLoading && (
         <div className="py-20 flex justify-center">
           <Loader2 className="animate-spin text-[#00A699]" size={40} />

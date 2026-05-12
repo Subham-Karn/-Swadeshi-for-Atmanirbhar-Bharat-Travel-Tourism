@@ -1,7 +1,7 @@
 import User from "../schemas/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { sendVerificationEmail } from "../util/emailService.js";
+import { sendEmail, sendVerificationEmail } from "../util/emailService.js";
 import { generateAccessToken } from "../util/generateToken.js";
 
 // Helper to generate tokens
@@ -146,6 +146,76 @@ export const loginUser = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const forgetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: "Email is required." });
+
+    const user = await User.findOne({ email:email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+    const secret = process.env.JWT_SECRET + user.password;
+
+    const payload = {
+      email: user.email.toLowerCase(),
+      id: user._id,
+    };
+    const token = jwt.sign(payload, secret, { expiresIn: '15m' });
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${user._id}/${token}`;
+
+    const message = `
+      <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #00A699;">Password Reset Request</h2>
+        <p>You requested a password reset for your account.</p>
+        <p>This link is valid for <b>15 minutes</b> only:</p>
+        <br>
+          ${resetUrl}
+        <br>
+        <a href="${resetUrl}" style="background: #00A699; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+        <p style="margin-top: 20px; color: #888; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+      </div>
+    `;
+
+    await sendEmail({
+      to: user.email,
+      subject: "Password Reset Link",
+      html:message,
+    });
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Reset link sent to registered email." 
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  const { id, token } = req.params;
+  const { password } = req.body;
+
+  const user = await User.findById(id);
+  if (!user) return res.status(404).json({ message: "User not found" });
+  const secret = process.env.JWT_SECRET + user.password;
+
+  try {
+    const decoded = jwt.verify(token, secret);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    user.password = hashedPassword; 
+    await user.save();
+
+    res.status(200).json({ message: "Password updated successfully" });
+  } catch (error) {
+    res.status(400).json({ message: "Link is invalid or has expired." });
   }
 };
 
