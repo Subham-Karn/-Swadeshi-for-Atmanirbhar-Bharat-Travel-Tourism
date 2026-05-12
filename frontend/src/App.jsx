@@ -21,6 +21,8 @@ import OfflineGuard from './components/OfflineGuard.jsx'
 import DestinationView from './pages/destination/DestinationView.jsx'
 import DiscoverPlaces from './pages/destination/DiscoverPlaces.jsx'
 import PlaceDetail from './pages/destination/PlaceDetail.jsx'
+import ForgotPassword from './pages/auth/ForgotPassword.jsx'
+import ResetPassword from './pages/auth/ResetPassword.jsx'
 const App = () => {
   return (
     <>
@@ -72,9 +74,11 @@ const App = () => {
           {/* Home */}
           <Route path="/" element={<UserLayout><HomeRoute/></UserLayout>} />
           <Route path="/no-internet" element={<NoInternet />} />
-          {/* Auth - Now toasts will work here too! */}
+          {/* Auth  */}
           <Route path="/auth/login" element={<Login/>} />
           <Route path="/auth/signup" element={<SignUp/>} />
+          <Route path="/auth/forget-password" element={<ForgotPassword/>} />
+          <Route path="/auth/reset-password/:id/:token" element={<ResetPassword/>} />
 
           {/* Pages */}
           <Route path='/trips' element={<UserLayout><TripDetails/></UserLayout>} />

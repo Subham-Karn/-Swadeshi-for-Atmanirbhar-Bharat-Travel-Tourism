@@ -26,7 +26,7 @@ export const useAuthStore = create((set) => ({
       // Save tokens to localStorage
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('token', data.accessToken);
+      localStorage.setItem('token', data.token);
       set({ 
         user: data.user, 
         accessToken: data.accessToken, 
@@ -42,7 +42,7 @@ export const useAuthStore = create((set) => ({
     set({loading: true});
     try {
       const {data} = await api.post('/auth/login', formdata);
-      localStorage.setItem('token', data.accessToken);
+      localStorage.setItem('token', data.token);
       localStorage.setItem('refreshToken', data.refreshToken);
       localStorage.setItem('user', JSON.stringify(data.user));
       set({ 
@@ -54,6 +54,26 @@ export const useAuthStore = create((set) => ({
     } catch (error) {
        set({ loading: false });
        return { success: false, message: error.response?.data?.message || "Login failed" };
+    }
+  },
+  forgetPassword: async (email) => {
+    try {
+      const response = await api.post('/auth/forget-password', { email });
+      const msg = response.data.message || "Password reset link has been sent to your email";
+      toast.success(msg);
+      return { success: true };
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Password reset failed");
+    } 
+  },
+  resetPassword: async (id, token, formData) => {
+    try {
+       const response = await api.post(`/auth/reset-password/${id}/${token}`, formData);
+       const msg = response.data.message || "Password reset successfully";
+       toast.success(msg);
+       return { success: true };
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Password reset failed");
     }
   },
   logout: async (navigate) => {

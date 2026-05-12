@@ -63,7 +63,7 @@ const Login = () => {
             <div className="space-y-2">
               <div className="flex justify-between px-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Password</label>
-                <button className="text-[10px] font-black text-[#00A699] uppercase">Forgot?</button>
+                <button type="button" onClick={()=>navigate("/auth/forget-password" , { state: { email } })} className="text-[10px] font-black text-[#00A699] uppercase">Forgot?</button>
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />

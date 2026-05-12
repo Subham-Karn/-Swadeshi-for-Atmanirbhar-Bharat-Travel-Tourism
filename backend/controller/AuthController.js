@@ -17,6 +17,7 @@ const generateTokens = (user) => {
   return { accessToken, refreshToken  };
 };
 
+
 export const requestSignup = async (req, res) => {
   const { name, username, gender, age, email, phone, address, password } =
     req.body;
@@ -80,12 +81,13 @@ export const verifyAndCreateUser = async (req, res) => {
     const { accessToken, refreshToken } = generateTokens(user);
     user.refreshTokens.push(refreshToken);
     await user.save();
-
+    const token = generateAccessToken(user._id);
     res.status(201).json({
       message: "Verified!",
       user: { id: user._id, name: user.name, role: user.role },
       accessToken,
-      refreshToken
+      refreshToken,
+      token
     });
   } catch (error) {
     res.status(500).json({ message: "Verification failed." });
@@ -132,6 +134,7 @@ export const loginUser = async (req, res) => {
     if (isMatch) {
       const { accessToken, refreshToken } = generateTokens(user);
       user.refreshTokens.push(refreshToken);
+      const token = generateAccessToken(user._id);
       await user.save();
       res
         .status(200)
@@ -140,6 +143,7 @@ export const loginUser = async (req, res) => {
           user: { id: user._id, name: user.name, role: user.role },
           accessToken,
           refreshToken,
+          token
         });
     } else {
       return res.status(400).json({ message: "Invalid password." });
@@ -166,7 +170,7 @@ export const forgetPassword = async (req, res) => {
     };
     const token = jwt.sign(payload, secret, { expiresIn: '15m' });
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${user._id}/${token}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/auth/reset-password/${user._id}/${token}`;
 
     const message = `
       <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
