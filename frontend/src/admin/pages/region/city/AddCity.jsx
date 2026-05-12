@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { Layers } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   Save,
@@ -19,6 +20,8 @@ import TextEditor from "../../../components/TextEditor";
 import { formatGoogleDriveUrl } from "../../../../util/formatGoogleDriveUrl";
 import MultiPhotoModal from "../../../modals/MultiPhotoModal";
 import toast from "react-hot-toast";
+import OverviewInput from "../../../components/OverviewInput";
+import { useCitiesStore } from "../../../../store/useCitiesStore";
 
 const RegionTypeOptions = [
   { value: "North", label: "North India" },
@@ -30,16 +33,15 @@ const RegionTypeOptions = [
 ];
 
 const AddCity = () => {
-  const { regionId, stateName, cityId } = useParams();
+  const { stateId, cityId } = useParams();
+  const {state} = useLocation();
   const navigate = useNavigate();
   const location = useLocation();
   const isEditMode = Boolean(cityId && location.pathname.includes("edit"));
 
-  const { fetchCityById, addCity, updateCity, isLoading } = useRegionsStore();
-
-  // State aligned with Mongoose Schema
+  const { fetchCityById, createCity, updateCity, isLoading } = useCitiesStore();
   const [forms, setForms] = useState({
-    regionId: regionId || "",
+    regionId: stateId || "",
     regionType: "North",
     cityName: "",
     cityImages: [],
@@ -55,7 +57,16 @@ const AddCity = () => {
     if (isEditMode) {
       const loadCity = async () => {
         const data = await fetchCityById(cityId);
-        if (data) setForms(data);
+        if (data) setForms({
+          regionId: data.regionId || "",
+          regionType: data.regionType || "North",
+          cityName: data.cityName || "",
+          cityImages: data.cityImages || [],
+          isPopular: data.isPopular || false,
+          overview: data.overview || "",
+          bestTimeToVisit: data.bestTimeToVisit || "",
+          rating: data.rating || 0,
+        });
       };
       loadCity();
     }
@@ -72,20 +83,18 @@ const AddCity = () => {
 
     try {
       if (isEditMode) {
-        await updateCity(cityId, forms);
-        toast.success("City node updated");
+        await updateCity(cityId, forms , stateId , navigate);
       } else {
-        await addCity(forms);
-        toast.success("New city registered");
+        await createCity(forms , navigate);
       }
-      navigate(`/admin/regions/${stateName}/${regionId}/cities`);
     } catch (error) {
-      toast.error("Operation failed");
+      console.log(error.message || `failed to ${isEditMode ? "Update" : "Create"} Citiy`);
+      
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F7F7] p-6">
+    <div className="min-h-screen bg-[#F7F7F7]">
       <MultiPhotoModal
         images={forms.cityImages}
         isOpen={isPhotoModalOpen}
@@ -107,12 +116,12 @@ const AddCity = () => {
                 {isEditMode ? "Modify City Node" : "Register New City"}
               </h1>
               <p className="text-[10px] font-bold text-[#00A699] uppercase tracking-widest flex items-center gap-2">
-                <Zap size={12} /> Parent State: {stateName}
+                <Zap size={12} /> Parent State: {state || "Not Available"}
               </p>
             </div>
           </div>
           <button onClick={handleSave} className="flex items-center gap-3 px-10 py-4 bg-[#00A699] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-[#008f84] active:scale-95 transition-all">
-            <Save size={18} /> {isEditMode ? "Commit Changes" : "Deploy City"}
+            <Save size={18} /> {isEditMode ? "Update Changes" : "Save City"}
           </button>
         </header>
 
@@ -201,7 +210,7 @@ const AddCity = () => {
               </div>
 
               {/* Overview */}
-              <TextEditor title="City Intelligence/Overview" value={forms.overview} onChange={(e) => handleInputChange("overview", e.target.value)} />
+              <OverviewInput value={forms.overview} onChange={(e) => handleInputChange("overview", e.target.value)} />
             </div>
           </section>
         </div>

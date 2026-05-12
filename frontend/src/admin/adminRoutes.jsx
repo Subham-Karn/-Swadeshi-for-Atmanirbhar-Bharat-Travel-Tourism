@@ -12,6 +12,7 @@ import ViewRegion from "./pages/region/ViewRegion";
 import Places from "./pages/region/places/Places";
 import AdminLayout from "./components/AdminLayout"
 import AddPlaces from "./pages/region/places/AddPlaces";
+import AddCity from "./pages/region/city/AddCity";
 const AdminRoute = () => {
   return (
     <Routes>
@@ -26,6 +27,8 @@ const AdminRoute = () => {
           <Route path="add" element={<AddRegion />} />
           <Route path=":stateId/edit" element={<AddRegion />} />
           <Route path=":stateId/view" element={<ViewRegion />} />
+          <Route path=":stateId/city/add" element={<AddCity />} />
+          <Route path=":stateId/city/:cityId/edit" element={<AddCity />} />
           <Route path=":stateName/cities/:cityName/:cityId">
             <Route path="places">
               <Route index element={<Places />} />

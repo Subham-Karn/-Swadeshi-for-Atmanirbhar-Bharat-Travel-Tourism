@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Star,
@@ -25,37 +25,64 @@ import { Autoplay, EffectFade } from "swiper/modules";
 import StateHeader from "../../components/StateHeader";
 import { useCitiesStore } from "../../../store/useCitiesStore";
 import { processDataList } from "../../../util/dataUtils";
+import { useStateStore } from "../../../store/useStateStore";
+import DeleteModal from "../../modals/DeleteModal";
 
 const Viewcity = () => {
   const { stateId } = useParams();
   const { state } = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [stateData , setStateData] = useState(state);
+  const [targetCity, setTargetCity] = useState(null);
   const [filterType, setFilterType] = useState("All");
-  const { cities, fetchCitiesByStateId, isLoading } = useCitiesStore();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { cities, fetchCitiesByStateId , deleteCity , isLoading: cityLoading} = useCitiesStore();
+  const {fetchStateById , isLoading} = useStateStore();
   const citiesData = useMemo(() => {
     return processDataList(cities);
   }, [cities]);
   const navigate = useNavigate();
-  const handleAdd = () => {
-    console.log("Opening Add City Modal...");
-  };
-
+  
+  const fetchState = useCallback( async ()=>{
+     const respose = await fetchStateById(stateId);
+     setStateData(respose);
+  },[])
   useEffect(() => {
+    if(!state) fetchState();  
     fetchCitiesByStateId(stateId);
-  }, [fetchCitiesByStateId, stateId]);
+  }, [fetchCitiesByStateId, stateId , fetchState]);
 
   const filteredCities = useMemo(() => {
-    if (filterType === "All") {
-      return citiesData;
-    } else {
-      return citiesData.filter((city) => city.category === filterType);
-    }
-  }, [citiesData, filterType]);
+      return cities.filter((c) => {
+        const matchesSearch = c.cityName.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesType = filterType === "All" || c.regionType === filterType;
+        return matchesSearch && matchesType;
+      });
+    }, [cities, searchQuery, filterType]);
+
+    const openDeleteModal = (city) => {
+    setTargetCity(city);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmedDelete = async () => {
+    if (!targetCity) return;
+      await deleteCity(targetCity._id);
+      setIsModalOpen(false);
+  };
 
   return (
     <div className="w-full min-h-screen font-sans overflow-y-hidden">
+      <DeleteModal 
+       isOpen={isModalOpen}
+       onClose={() => setIsModalOpen(false)}
+       onConfirm={handleConfirmedDelete}
+       itemName={targetCity?.cityName}
+       title="Purge State Hub"
+       isLoading={cityLoading}
+      />
       {/* Header */}
-      <StateHeader {...state} onAddCity={handleAdd} />
+      <StateHeader {...stateData}  onAddCity={()=>navigate(`/admin/regions/${stateId}/city/add` , {state:state?.stateName})} />
       {/* ─── FILTER TOOLBAR ─── */}
       <div className="flex flex-col lg:flex-row gap-4 my-6">
         <div className="relative flex-1">
@@ -65,7 +92,7 @@ const Viewcity = () => {
           />
           <input
             type="text"
-            placeholder="Search by state name..."
+            placeholder="Search by City Name..."
             className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm outline-none focus:border-[#00A699] font-bold text-sm transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -119,9 +146,9 @@ const Viewcity = () => {
                     key={city._id}
                     city={city}
                     index={idx}
-                    onDelete={() => openDeleteModal(city)} // Ensure this variable name is correct
-                    onEdit={() => navigate(`/admin/cities/${city._id}/edit`)}
-                    onView={() => navigate(`/admin/cities/${city._id}/view`, { state: city })}
+                    onDelete={() => openDeleteModal(city)} 
+                    onEdit={() => navigate(`/admin/regions/${stateId}/city/${city._id}/edit` , {state: state?.stateName})}
+                    onView={() => navigate(`/admin/regions/${state?.stateName || stateData?.stateName}/cities/${city.cityName}/${city._id}/places`, { state: city })}
                   />
                 ))}
               </div>
@@ -178,7 +205,7 @@ const AdminStateCard = ({ city, index, onDelete, onEdit, onView }) => (
           {city.cityName || "Not Available"}
         </h3>
         <p className="text-[10px] font-bold text-slate-400 mt-2 flex items-center gap-1 uppercase tracking-widest">
-          <MapPin size={10} /> {city.reach || "Not Available"}
+          <Calendar size={10} /> {city.bestTimeToVisit || "Not Available"}
         </p>
       </div>
     </div>
@@ -187,19 +214,20 @@ const AdminStateCard = ({ city, index, onDelete, onEdit, onView }) => (
     <div className="col-span-2">
       <div className="flex flex-col">
         <span className="text-[9px] font-black text-[#00A699] uppercase tracking-widest mb-1">
-          City Type
+          Region Type
         </span>
         <span className="text-sm font-black text-slate-700 uppercase">
-          {city.cityType} India
+          {city.regionType} India
         </span>
       </div>
     </div>
 
+
     {/* Cities Column */}
     <div className="col-span-2 text-center">
       <div className="inline-flex flex-col items-center px-5 py-2 bg-slate-50 rounded-2xl">
-        <span className="text-xl font-black text-slate-900 leading-none">
-          {0}
+        <span className="text-xl font-black  text-slate-900 leading-none">
+          {city.placeCount ||0}
         </span>
         <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">
           Places

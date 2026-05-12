@@ -17,6 +17,7 @@ const CitySchema = new mongoose.Schema({
         enum: ['North', 'South', 'East', 'West', 'Central', 'North-East']
     },
     cityName: { type: String, required: true },
+    placeCount: { type: Number, default: 0 },
     cityImages: { type: [String], required: true },
     isPopular: { type: Boolean, default: false },
     overview: { type: String, required: true },
