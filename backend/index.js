@@ -3,8 +3,10 @@ import express from "express";
 import cors from "cors";
 import connectDb from "./config/dbConfig.js";
 import AuthRoutes from "./routes/AuthRoutes.js";
-import RegionRoutes from "./routes/RegionRoutes.js";
 import PlaceRoutes from "./routes/PlaceRoute.js";
+import DestinationRoutes from "./routes/DestinationRoute.js";
+import StateRoutes from "./routes/StateRoutes.js";
+import CitiesRoutes from "./routes/CityRoutes.js";
 const app = express();
 connectDb();
 const PORT = process.env.PORT;
@@ -29,16 +31,25 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use((req , res , next)=>{
+app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if(origin && !ALLOWED_ORIGIN.includes(origin)){
+    if (origin && ALLOWED_ORIGIN.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+    } else if (origin) {
         return res.status(403).json({
-            success:false,
+            success: false,
             message: "CORS blocked: Unauthorized origin"
-        })
+        });
     }
-    next()
-})
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+
+    next();
+});
 
 app.get("/" , (req , res)=>{
     res.status(200).json({
@@ -47,9 +58,11 @@ app.get("/" , (req , res)=>{
     })
 })
 
-app.use("/api/auth" , AuthRoutes);
-app.use("/api/regions" , RegionRoutes)
-app.use("/api/places" , PlaceRoutes)
+app.use("/api/v1/auth" , AuthRoutes);
+app.use("/api/v1/states" , StateRoutes);
+app.use("/api/v1/cities" , CitiesRoutes);
+app.use("/api/v1/places" , PlaceRoutes);
+app.use("/api/v1/destinations", DestinationRoutes);
 
 app.listen(PORT , ()=>{
     console.log(`http://localhost:${PORT}`);

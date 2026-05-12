@@ -1,205 +1,131 @@
 import Place from "../schemas/Place.js";
 import City from "../schemas/Cities.js";
-// CREATE a new Place
+import mongoose from "mongoose";
 
-const createPlace = async (req, res) => {
+export const createPlace = async (req, res) => {
   try {
-    const { name, cityId, cityName, category, images, coverImage, overview } =
-      req.body;
+    const { name, cityId, cityName, category, overview, images, entryFee, timings, location, isPopular } = req.body;
 
-    // Basic validation
-    if (!name || !cityId || !cityName || !overview) {
-      return res
-        .status(400)
-        .json({ error: "Name, City, and Overview are required fields." });
+    // 1. Basic Validation
+    if (!name || !cityId || !cityName || !overview || !images?.length) {
+      return res.status(400).json({ success: false, message: "Required fields are missing" });
     }
 
-    // Check if a place with the same name already exists in the same city
-    const existingPlace = await Place.findOne({ name, cityId });
-    if (existingPlace) {
-      return res.status(400).json({
-        error: "A place with the same name already exists in the same city.",
-      });
+    // 2. Verify City Exists
+    const cityExists = await City.findById(cityId);
+    if (!cityExists) {
+      return res.status(404).json({ success: false, message: "Linked City node not found" });
     }
 
-    // Check if a place with the same name already exists in any city
-    const existingPlaceInAnyCity = await Place.findOne({ name });
-    if (existingPlaceInAnyCity) {
-      return res.status(400).json({
-        error: "A place with the same name already exists in another city.",
-      });
-    }
-
-    const newPlace = new Place({
+    // 3. Create Place
+    const newPlace = await Place.create({
       name,
       cityId,
       cityName,
       category,
-      images,
-      coverImage,
       overview,
+      images,
+      entryFee,
+      timings,
+      location,
+      isPopular,
+      createdBy: req.user?._id // Assuming you have auth middleware
     });
 
-    const savedPlace = await newPlace.save();
-    res.status(201).json(savedPlace);
+    return res.status(201).json({ success: true, data: newPlace });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: "Place name already exists" });
+    }
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-const getCityById = async (req, res) => {
+export const getAllPlaces = async (req, res) => {
   try {
-    const { cityId } = req.params;
+    const { cityId, category, search, popular } = req.query;
+    let query = {};
 
-    // Validate cityId
-    if (!cityId) {
-      return res.status(400).json({ error: "City ID is required" });
+    // Filters
+    if (cityId) query.cityId = cityId;
+    if (category) query.category = category.toLowerCase();
+    if (popular) query.isPopular = popular === 'true';
+
+    // Text Search Logic
+    if (search) {
+      query.$text = { $search: search };
     }
 
-    // Find city
-    const city = await City.findById(cityId);
-    // Check if city exists
-    if (!city) {
-      return res.status(404).json({ error: "City not found" });
-    }
-    // Prepare response
-    const cityInfo = {
-      _id: city._id,
-      cityName: city.cityName,
-      cityImages: city.cityImages?.[0] || null, 
-    };
+    const places = await Place.find(query).sort({ createdAt: -1 });
 
-    res.status(200).json(cityInfo);
-
+    return res.status(200).json({ success: true, count: places.length, data: places });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-const updatePlace = async (req, res) => {
+export const getPlaceById = async (req, res) => {
   try {
-    const { placeId } = req.params;
-    const { name, cityId, cityName, category, images, coverImage, overview } =
-      req.body;
-
-    // Validate placeId
-    if (!placeId) {
-      return res.status(400).json({ error: "Place ID is required" });
-    }
-
-    // Check if the place exists    const place = await Place.findById(placeId);
+    const place = await Place.findById(req.params.id).populate("cityId", "stateName");
+    
     if (!place) {
-      return res.status(404).json({ error: "Place not found" });
+      return res.status(404).json({ success: false, message: "Place not found" });
     }
 
-    // Update the place
-    place.name = name || place.name;
-    place.cityId = cityId || place.cityId;
-    place.cityName = cityName || place.cityName;
-    place.category = category || place.category;
-    place.images = images || place.images;
-    place.coverImage = coverImage || place.coverImage;
-    place.overview = overview || place.overview;
-
-    const updatedPlace = await place.save();
-    res.status(200).json({
-      message: "Place updated successfully",
-      success: true,
-      place: updatedPlace,
-    });
+    return res.status(200).json({ success: true, data: place });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ success: false, message: "Invalid ID format" });
   }
 };
 
-const getPlacesByCity = async (req, res) => {
+
+export const getPlaceCountByCityId = async (req , res)=>{
   try {
-    const { cityId } = req.params;
-    // Validate cityId
-    if (!cityId) {
-      return res.status(400).json({ error: "City ID is required" });
-    }
+      const {cityId} = req.params;
+      if(!cityId){
+        return res.status(400).json({success:false , message:"City ID is required"});
+      }
+      if(!mongoose.isValidObjectId(cityId)){
+        return res.status(400).json({success:false , message:"Invalid City ID format"});
+      }
+      const count = await Place.countDocuments({cityId: new mongoose.Types.ObjectId(cityId)});
+      return res.status(200).json({success:true , count});
 
-    // Check if the city exists
-    const city = await Place.findById(cityId);
-    if (!city) {
-      return res.status(404).json({ error: "City not found" });
-    }
-
-    // Find all places that belong to the specified city
-    const places = await Place.find({ cityId });
-    res.status(200).json(places);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
+    return res.status(500).json({success:false , message:error.message});
+  }
+}
+
+
+export const updatePlace = async (req, res) => {
+  try {
+    const updatedPlace = await Place.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedPlace) {
+      return res.status(404).json({ success: false, message: "Place not found" });
+    }
+
+    return res.status(200).json({ success: true, data: updatedPlace });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-const getPlaceById = async (req, res) => {
+
+export const deletePlace = async (req, res) => {
   try {
-    const { placeId } = req.params;
-
-    // Validate placeId
-    if (!placeId) {
-      return res.status(400).json({ error: "Place ID is required" });
-    }
-
-    // Check if the place exists
-    if (!placeId.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ error: "Invalid Place ID format" });
-    }
-
-    // Check if the place exists
-    const place = await Place.findById(placeId);
+    const place = await Place.findByIdAndDelete(req.params.id);
+    
     if (!place) {
-      return res.status(404).json({ error: "Place not found" });
+      return res.status(404).json({ success: false, message: "Place not found" });
     }
 
-    res
-      .status(200)
-      .json({ message: "Place retrieved successfully", success: true, place });
+    return res.status(200).json({ success: true, message: "Place removed successfully" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
-
-const deletePlace = async (req, res) => {
-  try {
-    const { placeId } = req.params;
-
-    // Validate placeId
-    if (!placeId) {
-      return res.status(400).json({ error: "Place ID is required" });
-    }
-
-    // Check if the place exists
-    const place = await Place.findById(placeId);
-    if (!place) {
-      return res.status(404).json({ error: "Place not found" });
-    }
-
-    // Delete the place
-    await Place.findByIdAndDelete(placeId);
-    res
-      .status(200)
-      .json({ message: "Place deleted successfully", success: true });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
-  }
-};
-
-const PlaceController = {
-  createPlace,
-  updatePlace,
-  getPlacesByCity,
-  getPlaceById,
-  deletePlace,
-  getCityById,
-};
-
-export default PlaceController;

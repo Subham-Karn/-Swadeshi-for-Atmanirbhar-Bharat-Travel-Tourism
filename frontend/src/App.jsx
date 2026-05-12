@@ -18,6 +18,9 @@ import Unauthorized from './pages/Unauthorized.jsx'
 import DestinationDetails from './pages/destination/DestinationDetails.jsx'
 import NoInternet from './pages/NoInternet.jsx'
 import OfflineGuard from './components/OfflineGuard.jsx'
+import DestinationView from './pages/destination/DestinationView.jsx'
+import DiscoverPlaces from './pages/destination/DiscoverPlaces.jsx'
+import PlaceDetail from './pages/destination/PlaceDetail.jsx'
 const App = () => {
   return (
     <>
@@ -76,7 +79,9 @@ const App = () => {
           {/* Pages */}
           <Route path='/trips' element={<UserLayout><TripDetails/></UserLayout>} />
           <Route path='/destinations' element={<UserLayout><DestinationRoute/></UserLayout>} />
-          <Route path='/destinations/:id' element={<UserLayout><DestinationDetails/></UserLayout>} />
+          <Route path='/destinations/:stateName/:id' element={<UserLayout><DestinationView/></UserLayout>} />
+          <Route path='/destinations/:stateName/:id/:cityName/:cityId' element={<UserLayout><DiscoverPlaces/></UserLayout>} />
+          <Route path='/destinations/:stateName/:id/:cityName/:cityId/:placeName/:placeId' element={<UserLayout><PlaceDetail/></UserLayout>} />
           <Route path='/search' element={<UserLayout><SearchPage/></UserLayout>} />
           <Route path='/about' element={<UserLayout><AboutIndia/></UserLayout>} />
           <Route path='/contact' element={<UserLayout><ContactRoute/></UserLayout>} />

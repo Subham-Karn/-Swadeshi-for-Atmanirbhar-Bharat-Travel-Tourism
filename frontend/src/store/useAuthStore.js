@@ -23,10 +23,10 @@ export const useAuthStore = create((set) => ({
     try {
       const { data } = await api.post('/auth/verify-otp', { email, otp });
       
-      // Save tokens and user info
-      localStorage.setItem('refreshToken', data.refreshToken);
+      // Save tokens to localStorage
       localStorage.setItem('user', JSON.stringify(data.user));
-      
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('token', data.accessToken);
       set({ 
         user: data.user, 
         accessToken: data.accessToken, 
@@ -42,6 +42,7 @@ export const useAuthStore = create((set) => ({
     set({loading: true});
     try {
       const {data} = await api.post('/auth/login', formdata);
+      localStorage.setItem('token', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       localStorage.setItem('user', JSON.stringify(data.user));
       set({ 
@@ -55,12 +56,19 @@ export const useAuthStore = create((set) => ({
        return { success: false, message: error.response?.data?.message || "Login failed" };
     }
   },
-  logout: async () => {
-    const { data } = await api.post('/auth/logout' , {token: localStorage.getItem('refreshToken')});
-    if(data.success === false) return toast.error(data.message);
-    toast.success(data.message); 
-    localStorage.removeItem('user');
-    localStorage.removeItem('refreshToken');
-    set({ user: null, accessToken: null });
+  logout: async (navigate) => {
+    try {
+      const { data } = await api.post('/auth/logout' , {token: localStorage.getItem('refreshToken')});
+      if(data.success === false) return toast.error(data.message);
+      toast.success("Logout successful"); 
+      localStorage.removeItem('user');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('token');
+      set({ user: null, accessToken: null });
+      navigate('/auth/login');
+    } catch (error) {
+      set({ user: null, accessToken: null });
+      console.error(error);
+    }
   }
 }));

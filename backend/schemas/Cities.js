@@ -8,13 +8,13 @@ const CitySchema = new mongoose.Schema({
     },
     regionId: { 
         type: mongoose.Schema.Types.ObjectId, 
-        ref: "State", // Links this city to a specific State
+        ref: "State", 
         required: true 
     },
     regionType: { 
         type: String, 
         required: true,
-        enum: ['North', 'South', 'East', 'West', 'Central', 'North-East'] // Matches State
+        enum: ['North', 'South', 'East', 'West', 'Central', 'North-East']
     },
     cityName: { type: String, required: true },
     cityImages: { type: [String], required: true },

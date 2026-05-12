@@ -24,8 +24,8 @@ const AdminRoute = () => {
         <Route path="regions">
           <Route index element={<Regions />} />
           <Route path="add" element={<AddRegion />} />
-          <Route path=":regionId/edit" element={<AddRegion />} />
-          <Route path=":regionId/view" element={<ViewRegion />} />
+          <Route path=":stateId/edit" element={<AddRegion />} />
+          <Route path=":stateId/view" element={<ViewRegion />} />
           <Route path=":stateName/cities/:cityName/:cityId">
             <Route path="places">
               <Route index element={<Places />} />

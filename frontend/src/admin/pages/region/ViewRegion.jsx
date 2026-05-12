@@ -1,526 +1,257 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
-  MapPin, Clock, Star, CheckCircle2,
-  ChevronLeft, Share2, Heart, ShieldCheck,
-  TrendingUp, Building2, Edit, List, Plus, Eye,
-  X, ChevronRight, Grid, ZoomIn
-} from 'lucide-react';
-import { useRegionsStore } from '../../../store/useRegionStore';
-import { parseCustomSyntax } from '../../../engine/useTextEngine';
-import { formatDateTime } from '../../../util/formatDateTime';
-import { renderStars } from '../../../util/renderStars';
+  Star,
+  Plus,
+  Info,
+  Calendar,
+  Search,
+  Loader2,
+  Navigation,
+  MapPin,
+  User,
+  Eye,
+  SquarePen,
+  Trash2,
+} from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+// Swiper Styles
+import "swiper/css";
+import "swiper/css/pagination";
+import "swiper/css/effect-fade";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, EffectFade } from "swiper/modules";
+import StateHeader from "../../components/StateHeader";
+import { useCitiesStore } from "../../../store/useCitiesStore";
+import { processDataList } from "../../../util/dataUtils";
 
-/* ─── Lightbox ─── */
-const Lightbox = ({ images, activeIndex, onClose, onNav }) => {
-  const [zoomed, setZoomed] = useState(false);
+const Viewcity = () => {
+  const { stateId } = useParams();
+  const { state } = useLocation();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("All");
+  const { cities, fetchCitiesByStateId, isLoading } = useCitiesStore();
+  const citiesData = useMemo(() => {
+    return processDataList(cities);
+  }, [cities]);
+  const navigate = useNavigate();
+  const handleAdd = () => {
+    console.log("Opening Add City Modal...");
+  };
 
   useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowRight') onNav(1);
-      if (e.key === 'ArrowLeft') onNav(-1);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, onNav]);
+    fetchCitiesByStateId(stateId);
+  }, [fetchCitiesByStateId, stateId]);
+
+  const filteredCities = useMemo(() => {
+    if (filterType === "All") {
+      return citiesData;
+    } else {
+      return citiesData.filter((city) => city.category === filterType);
+    }
+  }, [citiesData, filterType]);
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex flex-col"
-        style={{ background: 'rgba(15,15,15,0.97)' }}
-        onClick={onClose}
-      >
-        {/* Top Bar */}
-        <div
-          className="flex items-center justify-between px-6 py-4"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <span className="text-white/50 text-xs font-mono tracking-widest uppercase">
-            Gallery · {activeIndex + 1} / {images.length}
-          </span>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setZoomed(z => !z)}
-              className="p-2 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
-            >
-              <ZoomIn size={18} />
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
-            >
-              <X size={18} />
-            </button>
-          </div>
+    <div className="w-full min-h-screen font-sans">
+      {/* Header */}
+      <StateHeader {...state} onAddCity={handleAdd} />
+      {/* ─── FILTER TOOLBAR ─── */}
+      <div className="flex flex-col lg:flex-row gap-4 my-6">
+        <div className="relative flex-1">
+          <Search
+            className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300"
+            size={18}
+          />
+          <input
+            type="text"
+            placeholder="Search by state name..."
+            className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm outline-none focus:border-[#00A699] font-bold text-sm transition-all"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-
-        {/* Main Image */}
-        <div
-          className="flex-1 flex items-center justify-center relative overflow-hidden px-16"
-          onClick={(e) => e.stopPropagation()}
+        <select
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+          className="px-8 py-4 bg-white border border-slate-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-500 shadow-sm outline-none cursor-pointer"
         >
-          <button
-            onClick={() => onNav(-1)}
-            className="absolute left-4 z-10 w-11 h-11 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-all border border-white/10"
-          >
-            <ChevronLeft size={22} />
-          </button>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeIndex}
-              initial={{ opacity: 0, scale: 0.96, x: 30 }}
-              animate={{ opacity: 1, scale: zoomed ? 1.6 : 1, x: 0 }}
-              exit={{ opacity: 0, scale: 0.96, x: -30 }}
-              transition={{ duration: 0.22, ease: 'easeOut' }}
-              className="w-full max-w-3xl"
-              style={{ cursor: zoomed ? 'zoom-out' : 'zoom-in' }}
-              onClick={() => setZoomed(z => !z)}
-            >
-              <img
-                src={images[activeIndex]}
-                alt={`Gallery ${activeIndex + 1}`}
-                className="w-full rounded-2xl object-cover"
-                style={{ maxHeight: '65vh', boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}
-                referrerPolicy="no-referrer"
-              />
-            </motion.div>
-          </AnimatePresence>
-
-          <button
-            onClick={() => onNav(1)}
-            className="absolute right-4 z-10 w-11 h-11 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-all border border-white/10"
-          >
-            <ChevronRight size={22} />
-          </button>
-        </div>
-
-        {/* Filmstrip */}
-        <div
-          className="flex items-center gap-3 px-6 py-4 overflow-x-auto"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {images.map((img, i) => (
-            <motion.button
-              key={i}
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => onNav(i - activeIndex)}
-              className="shrink-0 rounded-xl overflow-hidden transition-all"
-              style={{
-                width: 72, height: 52,
-                border: i === activeIndex ? '2px solid #00A699' : '2px solid transparent',
-                opacity: i === activeIndex ? 1 : 0.45,
-              }}
-            >
-              <img src={img} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-            </motion.button>
+          <option value="All">All Zones</option>
+          {["North", "South", "East", "West", "Central", "North-East"].map(
+            (t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ),
+          )}
+        </select>
+      </div>
+      {/*City Cards */}
+      <AnimatePresence mode="popLayout" initial={false}>
+        <div className="flex flex-col gap-2 w-full h-70 overflow-y-auto">
+          {filteredCities.map((city, idx) => (
+            <AdminStateCard
+              key={city._id}
+              city={city}
+              index={idx}
+              onDelete={() => openDeleteModal(region)}
+              onEdit={() => navigate(`/admin/regions/${region._id}/edit`)}
+              onView={() =>
+                navigate(`/admin/regions/${region._id}/view`, { state: region })
+              }
+            />
           ))}
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </AnimatePresence>
+      {isLoading && (
+        <div className="py-20 flex justify-center">
+          <Loader2 className="animate-spin text-[#00A699]" size={40} />
+        </div>
+      )}
+    </div>
   );
 };
 
-/* ─── City Card ─── */
-const CityCard = ({ city, stateName, navigate }) => (
-  
+export default Viewcity;
+
+const AdminStateCard = ({ city, index, onDelete, onEdit, onView }) => (
   <motion.div
-    whileHover={{ y: -5, boxShadow: '0 20px 48px rgba(0,166,153,0.12)' }}
-    transition={{ duration: 0.2 }}
-    className="rounded-3xl overflow-hidden bg-white"
-    style={{ border: '1px solid #f0f0f0' }}
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: index * 0.05 }}
+    className="bg-white border relative border-slate-50 rounded-xl p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 items-center gap-6 hover:shadow-xl hover:shadow-slate-100 transition-all group"
   >
-    <div className="relative overflow-hidden" style={{ height: 180 }}>
-      <img
-        src={city.cityImages[0]}
-        alt={city.cityName}
-        className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
-        referrerPolicy="no-referrer"
-      />
-      <div
-        className="absolute inset-0"
-        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 60%)' }}
-      />
-      <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
-        style={{ background: 'rgba(255,255,255,0.92)', color: '#00A699' }}>
-        {renderStars(city.rating || 0)} {city.rating.toFixed(1) || 0}
+    <NewBadge isNew={city.isNew} />
+    {/* Visual & Name Column */}
+    <div className="col-span-4 flex items-center gap-6">
+      <div className="w-24 h-24 lg:w-20 lg:h-20 rounded-xl overflow-hidden shrink-0 relative shadow-md">
+        <Swiper
+          modules={[Autoplay, EffectFade]}
+          effect="fade"
+          autoplay={{ delay: 2500 + index * 300 }}
+          className="h-full w-full"
+        >
+          {city.cityImages?.map((img, i) => (
+            <SwiperSlide key={i}>
+              <img
+                src={img}
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            </SwiperSlide>
+          ))}
+        </Swiper>
+        {city.isPopular && (
+          <div className="absolute top-1 right-1 z-10 bg-orange-500 p-1 rounded-full text-white shadow-lg">
+            <Star size={10} fill="currentColor" />
+          </div>
+        )}
       </div>
-      <h4 className="absolute bottom-3 left-4 text-white text-lg font-bold tracking-tight">
-        {city.cityName}
-      </h4>
+      <div>
+        <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase leading-none">
+          {city.cityName || "Not Available"}
+        </h3>
+        <p className="text-[10px] font-bold text-slate-400 mt-2 flex items-center gap-1 uppercase tracking-widest">
+          <MapPin size={10} /> {city.reach || "Not Available"}
+        </p>
+      </div>
     </div>
 
-    <div className="p-4">
-      <div className="flex gap-2">
-        <button
-          onClick={() => navigate(`/admin/regions/${stateName}/cities/${city?.cityName}/${city._id}/places`)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-          style={{ background: '#f0faf9', color: '#00A699', border: '1px solid #c8ebe9' }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#00A699'; e.currentTarget.style.color = '#fff'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = '#f0faf9'; e.currentTarget.style.color = '#00A699'; }}
-        >
-          <Eye size={13} /> View
-        </button>
-        <button
-          onClick={() => navigate(`/admin/regions/${stateName}/cities/${city?.cityName}/${city._id}/places/add`)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-          style={{ background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa' }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#ea580c'; e.currentTarget.style.color = '#fff'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = '#fff7ed'; e.currentTarget.style.color = '#ea580c'; }}
-        >
-          <Plus size={13} /> Add
-        </button>
-        <button
-          onClick={() => navigate(`/admin/regions/${stateName}/cities/${city?.cityName}/${city._id}/edit`)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-          style={{ background: '#f8f8f8', color: '#555', border: '1px solid #e5e5e5' }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#1a1a1a'; e.currentTarget.style.color = '#fff'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = '#f8f8f8'; e.currentTarget.style.color = '#555'; }}
-        >
-          <List size={13} /> Edit
-        </button>
+    {/* city Column */}
+    <div className="col-span-2">
+      <div className="flex flex-col">
+        <span className="text-[9px] font-black text-[#00A699] uppercase tracking-widest mb-1">
+          City Type
+        </span>
+        <span className="text-sm font-black text-slate-700 uppercase">
+          {city.cityType} India
+        </span>
       </div>
+    </div>
+
+    {/* Cities Column */}
+    <div className="col-span-2 text-center">
+      <div className="inline-flex flex-col items-center px-5 py-2 bg-slate-50 rounded-2xl">
+        <span className="text-xl font-black text-slate-900 leading-none">
+          {0}
+        </span>
+        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">
+          Places
+        </span>
+      </div>
+    </div>
+
+    {/* Creator Column */}
+    <div className="col-span-2">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center text-[#00A699]">
+          <User size={14} />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+            Created By
+          </span>
+          <span className="text-xs font-bold text-slate-700">
+            {city.uid.name || "NA"}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    {/* Actions Column */}
+    <div className="col-span-2 flex items-center justify-end gap-2">
+      <ActionBtn
+        icon={<Eye size={18} />}
+        onClick={onView}
+        label="View"
+        type="teal"
+      />
+      <ActionBtn
+        icon={<SquarePen size={18} />}
+        onClick={onEdit}
+        label="Edit"
+        type="slate"
+      />
+      <ActionBtn
+        icon={<Trash2 size={18} />}
+        onClick={onDelete}
+        label="Delete"
+        type="red"
+      />
     </div>
   </motion.div>
 );
 
-/* ─── Main ViewRegion ─── */
-const ViewRegion = () => {
-  const { regionId } = useParams();
-  const navigate = useNavigate();
-  const { regions, cities, fetchCitiesByState, isLoading } = useRegionsStore();
-
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [activeThumb, setActiveThumb] = useState(0);
-
-  const region = useMemo(() => regions.find(r => r._id === regionId), [regions, regionId]);
-
-  useEffect(() => {
-    if (regionId) fetchCitiesByState(regionId);
-  }, [regionId, fetchCitiesByState]);
-
-  const allImages = useMemo(() => {
-    if (!region) return [];
-    const primary = region.stateImage;
-    const gallery = Array.isArray(region.stateImage) ? region.stateImage : [];
-    const combined = [primary, ...gallery].flat().filter(Boolean);
-    return [...new Set(combined)];
-  }, [region]);
-
-  const openLightbox = useCallback((index) => {
-    setLightboxIndex(index);
-    setLightboxOpen(true);
-  }, []);
-
-  const navLightbox = useCallback((delta) => {
-    setLightboxIndex(i => (i + delta + allImages.length) % allImages.length);
-  }, [allImages.length]);
-
-  if (isLoading && !region) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-white">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          className="w-10 h-10 rounded-full border-2 border-transparent"
-          style={{ borderTopColor: '#00A699', borderRightColor: '#00A699' }}
-        />
-      </div>
-    );
-  }
-
-  if (!region) return null;
-  
-  const primaryImage = allImages[activeThumb] || allImages[0];
-
+const ActionBtn = ({ icon, onClick, type }) => {
+  const styles = {
+    teal: "bg-teal-50 text-[#00A699] hover:bg-[#00A699] hover:text-white",
+    slate: "bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white",
+    red: "bg-red-50 text-red-400 hover:bg-red-500 hover:text-white",
+  };
   return (
-    <>
-      {lightboxOpen && (
-        <Lightbox
-          images={allImages}
-          activeIndex={lightboxIndex}
-          onClose={() => setLightboxOpen(false)}
-          onNav={navLightbox}
-        />
-      )}
-
-      <div className="min-h-screen ">
-
-        {/* ── Header ── */}
-        <div className="max-w-7xl mx-auto px-6 md:px-12 pt-8 mb-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-2 mb-3"
-                style={{ color: '#00A699', fontSize: 11, fontWeight: 700, letterSpacing: '0.25em', textTransform: 'uppercase' }}>
-                <MapPin size={13} /> {region.regionType} Region
-              </div>
-              <h1 className="text-5xl md:text-6xl font-black text-gray-900 tracking-tighter uppercase">
-                {region.stateName}
-              </h1>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => navigate('/admin/regions')}
-                className="w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all"
-                style={{ border: '1px solid #f0f0f0' }}
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button
-                onClick={() => navigate(`/admin/regions/${regionId}/edit`)}
-                className="flex items-center gap-2 px-6 py-3 rounded-2xl text-white text-xs font-bold uppercase tracking-widest transition-all"
-                style={{ background: '#111' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#00A699'}
-                onMouseLeave={e => e.currentTarget.style.background = '#111'}
-              >
-                <Edit size={14} /> Edit Region
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Gallery ── */}
-        <div className="max-w-7xl mx-auto px-6 md:px-12 mb-16">
-          <div className="flex flex-col md:flex-row gap-4" style={{ height: 460 }}>
-
-            {/* Thumbnail Strip (left) */}
-            <div 
-              className="hidden md:flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar" 
-              style={{ 
-                width: 90, 
-                maxHeight: '100%',
-                scrollbarWidth: 'none', /* Firefox */
-                msOverflowStyle: 'none'  /* IE/Edge */
-              }}
-            >
-              <style>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                  display: none; /* Chrome, Safari, Opera */
-                }
-              `}</style>
-
-              {allImages.map((img, i) => (
-                <motion.button
-                  key={i}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setActiveThumb(i)}
-                  className="shrink-0 rounded-xl overflow-hidden transition-all duration-300 relative group"
-                  style={{
-                    width: 72, 
-                    height: 72,
-                    border: activeThumb === i ? '3px solid #00A699' : '2px solid transparent',
-                    backgroundColor: '#f8f8f8'
-                  }}
-                >
-                  <img 
-                    src={img} 
-                    alt={`Thumbnail ${i}`} 
-                    className={`w-full h-full object-cover transition-opacity duration-300 ${activeThumb === i ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`} 
-                    referrerPolicy="no-referrer" 
-                  />
-                  
-                  {/* Subtle Inner Shadow for Active State */}
-                  {activeThumb === i && (
-                    <div className="absolute inset-0 shadow-[inset_0_0_10px_rgba(0,166,153,0.3)] pointer-events-none" />
-                  )}
-                </motion.button>
-              ))}
-            </div>
-
-            {/* Main Display */}
-            <div className="flex-1 relative rounded-3xl overflow-hidden group cursor-zoom-in"
-              style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.12)' }}
-              onClick={() => openLightbox(activeThumb)}
-            >
-              <AnimatePresence mode="wait">
-                <motion.img
-                  key={activeThumb}
-                  src={allImages[activeThumb]}
-                  alt={region.stateName}
-                  initial={{ opacity: 0, scale: 1.04 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              </AnimatePresence>
-
-              {/* Prev/Next on main image */}
-              {allImages.length > 1 && (
-                <>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setActiveThumb(i => (i - 1 + allImages.length) % allImages.length); }}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all bg-black/40 backdrop-blur-md"
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setActiveThumb(i => (i + 1) % allImages.length); }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all bg-black/40 backdrop-blur-md"
-                  >
-                    <ChevronRight size={20} />
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Side mini images (right) - Static previews of index 1 and 2 */}
-            {allImages.length > 1 && (
-              <div className="hidden lg:flex flex-col gap-4" style={{ width: 220 }}>
-                {allImages.slice(1, 3).map((img, i) => (
-                  <motion.div
-                    key={i}
-                    whileHover={{ scale: 1.02 }}
-                    className="flex-1 rounded-2xl overflow-hidden cursor-pointer relative group"
-                    style={{ border: '1px solid #f0f0f0' }}
-                    onClick={() => openLightbox(i + 1)}
-                  >
-                    <img src={img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
-                    
-                    {/* Show "+ Count" on the last side image if there are more than 3 images total */}
-                    {i === 1 && allImages.length > 3 && (
-                      <div className="absolute inset-0 flex items-center justify-center flex-col text-white"
-                        style={{ background: 'rgba(0,0,0,0.5)' }}>
-                        <span className="text-2xl font-black">+{allImages.length - 3}</span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Gallery</span>
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Main Content ── */}
-        <div className="max-w-7xl mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-3 gap-16 pb-24">
-
-          {/* Left */}
-          <div className="lg:col-span-2">
-
-            {/* Stats Strip */}
-            <div className="flex flex-wrap gap-8 mb-12 pb-10" style={{ borderBottom: '1px solid #f0f0f0' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: '#f0faf9' }}>
-                  <TrendingUp size={18} style={{ color: '#00A699' }} />
-                </div>
-                <div>
-                  <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Market Reach</p>
-                  <span className="font-black text-gray-800 text-lg">{region.reach}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: '#fff7ed' }}>
-                  <Building2 size={18} style={{ color: '#ea580c' }} />
-                </div>
-                <div>
-                  <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Managed Cities</p>
-                  <span className="font-black text-gray-800 text-lg">{cities.length} Active Cities</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Overview */}
-            <section className="mb-16">
-              <div className="text-gray-500 leading-relaxed text-base" style={{ lineHeight: 1.9 }}>
-                {region.overview ? parseCustomSyntax(region.overview) : 'Awaiting Region deployment documentation...'}
-              </div>
-            </section>
-
-            {/* Cities */}
-            <section>
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Active Cities</h3>
-                <span className="px-4 py-1.5 rounded-full text-white text-xs font-black uppercase tracking-widest"
-                  style={{ background: '#111' }}>
-                  {cities.length} Deployed
-                </span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {cities.map((city) => (
-                  
-                  <CityCard key={city._id} city={city} stateName={region.stateName} navigate={navigate} />
-                ))}
-              </div>
-            </section>
-          </div>
-
-          {/* Right Sticky Card */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-8 rounded-3xl p-8 bg-white"
-              style={{ border: '1px solid #f0f0f0', boxShadow: '0 24px 64px rgba(0,0,0,0.07)' }}>
-
-              {/* Status */}
-              <div className="flex items-center justify-between mb-6 pb-6" style={{ borderBottom: '1px solid #f5f5f5' }}>
-                <div>
-                  <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Status</p>
-                  <p className="text-3xl font-black text-gray-900 uppercase">{region.status}</p>
-                </div>
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{
-                    background: region.status === 'Active' ? '#00A699' : '#f97316',
-                    boxShadow: `0 0 0 4px ${region.status === 'Active' ? 'rgba(0,166,153,0.2)' : 'rgba(249,115,22,0.2)'}`,
-                    animation: 'pulse 2s infinite',
-                  }}
-                />
-              </div>
-
-              {/* Meta rows */}
-              <div className="space-y-4 mb-8">
-                {[
-                  { icon: <Star size={15} fill="#f97316" style={{ color: '#f97316' }} />, label: 'Popularity', value: region.isPopular ? 'High Priority' : 'Standard' },
-                  { icon: <ShieldCheck size={15} style={{ color: '#00A699' }} />, label: 'Data', value: 'Verified' },
-                  { icon: <MapPin size={15} style={{ color: '#6366f1' }} />, label: 'Region', value: region.regionType },
-                  { icon: <Clock size={15} style={{ color: '#94a3b8' }} />, label: 'Last Sync', value: formatDateTime(region.updatedAt) },
-                ].map(({ icon, label, value }) => (
-                  <div key={label} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      {icon}
-                      <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{label}</span>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700">{value}</span>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                className="w-full py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-all active:scale-[0.98]"
-                style={{ background: '#00A699', boxShadow: '0 12px 32px rgba(0,166,153,0.3)' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#008a7e'}
-                onMouseLeave={e => e.currentTarget.style.background = '#00A699'}
-              >
-                Manage Deployment
-              </button>
-
-              <p className="text-center mt-4 text-xs text-gray-300 uppercase tracking-widest font-bold">
-                Admin Secure · Verified Data
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
-    </>
+    <button
+      onClick={onClick}
+      className={`p-3.5 rounded-2xl transition-all shadow-sm ${styles[type]}`}
+    >
+      {icon}
+    </button>
   );
 };
 
-export default ViewRegion;
+const NewBadge = ({ isNew }) => {
+  if (!isNew) return null;
+
+  return (
+    <div className="absolute -top-1 -left-1 z-20">
+      <div className="relative">
+        {/* Subtle Pulse Ring */}
+        <span className="absolute inset-0 rounded-full bg-[#00A699] animate-ping opacity-20" />
+
+        {/* Main Badge */}
+        <span className="relative bg-[#00A699] text-white text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest shadow-lg shadow-teal-100 flex items-center gap-1 border border-white/20">
+          <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
+          New
+        </span>
+      </div>
+    </div>
+  );
+};

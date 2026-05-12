@@ -2,6 +2,7 @@ import axios from "../api/axios";
 import { create } from "zustand";
 export const usePlaceStore = create((set) => ({
     places: [],
+    userPlaces: [],
     isLoading: false,
 
     fetchPlacesByCity: async (cityId) => {
@@ -13,6 +14,34 @@ export const usePlaceStore = create((set) => ({
         } catch (error) {
             console.error("Error fetching places:", error);
         } finally {
+            set({ isLoading: false });
+        }
+    },
+
+    fetchUserPlaces: async () => {
+        set({ isLoading: true });
+        try {
+            const response = await axios.get(`/places/all`);
+            set({ userPlaces: response.data });
+        } catch (error) {
+            console.error("Error fetching user places:", error);
+        } finally {
+            set({ isLoading: false });
+        }
+    },
+
+    fetchCityById: async (cityId) => {
+        set({ isLoading: true });
+        try {
+            if(!cityId) throw new Error("City ID is required to fetch city details");
+            const response = await axios.get(`/places/city/view/${cityId}`);
+            return response.data; 
+        }
+        catch (error) {
+            console.error("Error fetching city details:", error);
+            return null; 
+        }
+        finally {
             set({ isLoading: false });
         }
     },

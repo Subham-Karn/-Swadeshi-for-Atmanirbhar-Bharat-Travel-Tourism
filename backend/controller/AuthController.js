@@ -2,47 +2,61 @@ import User from "../schemas/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { sendVerificationEmail } from "../util/emailService.js";
+import { generateAccessToken } from "../util/generateToken.js";
 
 // Helper to generate tokens
 const generateTokens = (user) => {
   const accessToken = jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: '15m' }
+    { expiresIn: "15m" },
   );
-  const refreshToken = jwt.sign(
-    { id: user._id },
-    process.env.REFRESH_SECRET,
-    { expiresIn: '7d' } 
-  );
-  return { accessToken, refreshToken };
+  const refreshToken = jwt.sign({ id: user._id }, process.env.REFRESH_SECRET, {
+    expiresIn: "7d",
+  });
+  return { accessToken, refreshToken  };
 };
 
 export const requestSignup = async (req, res) => {
-  const { name, username, gender, age, email, phone, address, password } = req.body;
+  const { name, username, gender, age, email, phone, address, password } =
+    req.body;
   if (!req.body) {
     return res.status(400).json({ message: "Request body is missing" });
   }
   try {
-    const existingUser = await User.findOne({ $or: [{ email }, { username }, { phone }] });
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }, { phone }],
+    });
     if (existingUser && existingUser.isVerified) {
       return res.status(400).json({ message: "Account already exists." });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); 
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     await User.findOneAndUpdate(
       { email },
-      { name, username, gender, age, phone, address, password: hashedPassword, otp, otpExpires, isVerified: false },
-      { upsert: true, returnDocument: "after" }
+      {
+        name,
+        username,
+        gender,
+        age,
+        phone,
+        address,
+        password: hashedPassword,
+        otp,
+        otpExpires,
+        isVerified: false,
+      },
+      { upsert: true, returnDocument: "after" },
     );
 
     const emailSent = await sendVerificationEmail(email, otp);
-    if (!emailSent) return res.status(500).json({ message: "Email service failed." });
+    if (!emailSent)
+      return res.status(500).json({ message: "Email service failed." });
 
     res.status(200).json({ message: "OTP sent to email." });
   } catch (error) {
@@ -64,7 +78,7 @@ export const verifyAndCreateUser = async (req, res) => {
     user.otpExpires = undefined;
 
     const { accessToken, refreshToken } = generateTokens(user);
-    user.refreshTokens.push(refreshToken); 
+    user.refreshTokens.push(refreshToken);
     await user.save();
 
     res.status(201).json({
@@ -88,11 +102,11 @@ export const refreshSession = async (req, res) => {
 
     jwt.verify(token, process.env.REFRESH_SECRET, (err, decoded) => {
       if (err) return res.status(403).json({ message: "Token expired." });
-      
+
       const accessToken = jwt.sign(
         { id: user._id, role: user.role },
         process.env.JWT_SECRET,
-        { expiresIn: '15m' }
+        { expiresIn: "15m" },
       );
       res.json({ accessToken });
     });
@@ -101,54 +115,76 @@ export const refreshSession = async (req, res) => {
   }
 };
 
-
-export const loginUser = async (req , res) =>{
-  const {email , password} = req.body;
+export const loginUser = async (req, res) => {
+  const { email, password } = req.body;
   try {
-    if(!req.body){
+    if (!req.body) {
       return res.status(400).json({ message: "Request body is missing" });
     }
     const user = await User.findOne({ email });
-    if(!user){
+    if (!user) {
       return res.status(400).json({ message: "User not found." });
     }
-    if(!user.isVerified){
+    if (!user.isVerified) {
       return res.status(400).json({ message: "User is not verified." });
     }
-    const isMatch = await bcrypt.compare(password , user.password);
-    if(isMatch){
-      const { accessToken , refreshToken } = generateTokens(user);
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (isMatch) {
+      const { accessToken, refreshToken } = generateTokens(user);
       user.refreshTokens.push(refreshToken);
       await user.save();
-      res.status(200).json({ message: "Login successful." , user: { id: user._id, name: user.name, role: user.role }, accessToken , refreshToken });
-    }else{
+      res
+        .status(200)
+        .json({
+          message: "Login successful.",
+          user: { id: user._id, name: user.name, role: user.role },
+          accessToken,
+          refreshToken,
+        });
+    } else {
       return res.status(400).json({ message: "Invalid password." });
     }
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
   }
-}
+};
 
 export const logout = async (req, res) => {
-  const { token } = req.body; 
+  const { token } = req.body;
+  console.log(token);
+  
 
   try {
     if (!token) {
-      return res.status(400).json({sucess: false , message: "Refresh token is required for logout." });
+      return res
+        .status(400)
+        .json({
+          sucess: false,
+          message: "Refresh token is required for logout.",
+        });
     }
 
     const result = await User.updateOne(
-      {new: true},
+      { new: true },
       { refreshTokens: token },
-      { $pull: { refreshTokens: token } }
-    )
+      { $pull: { refreshTokens: token } },
+    );
     if (result.matchedCount === 0) {
-      return res.status(200).json({sucess: true , message: "Session already expired or invalid." });
+      return res
+        .status(200)
+        .json({ sucess: true, message: "Session already expired or invalid." });
     }
 
-    res.status(200).json({sucess: true , message: "Logged out successfully. Session expired." });
+    res
+      .status(200)
+      .json({
+        sucess: true,
+        message: "Logged out successfully. Session expired.",
+      });
   } catch (error) {
     console.error("Logout Error:", error);
-    res.status(500).json({sucess: false , message: "Error during logout process." });
+    res
+      .status(500)
+      .json({ sucess: false, message: "Error during logout process." });
   }
 };
