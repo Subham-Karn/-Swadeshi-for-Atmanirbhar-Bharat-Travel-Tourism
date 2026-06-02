@@ -13,6 +13,11 @@ import Places from "./pages/region/places/Places";
 import AdminLayout from "./components/AdminLayout"
 import AddPlaces from "./pages/region/places/AddPlaces";
 import AddCity from "./pages/region/city/AddCity";
+import AddHotels from "./pages/hotels/AddHotels";
+import AdminHotelsPage from "./pages/hotels/Hotels";
+import AddTransport from "./pages/transport/AddTransport";
+import Transport from "./pages/transport/Transport";
+import TripFormPage from "./pages/TripFormPage";
 const AdminRoute = () => {
   return (
     <Routes>
@@ -35,11 +40,25 @@ const AdminRoute = () => {
               <Route path="add" element={<AddPlaces />} />
               <Route path=":placeId/edit" element={<AddPlaces />} />
             </Route>
+          
           </Route>
-
+          <Route path=":cityName/:cityId">
+            <Route path="hotels" index element={<AdminHotelsPage/>} />
+            <Route path="hotels/add" element={<AddHotels/>}/>
+            <Route path="hotels/:id/edit" element={<AddHotels/>}/>
+          </Route>
+          <Route path=":cityName/:cityId">
+            <Route path="transport" index element={<Transport/>} />
+            <Route path="transport/add" element={<AddTransport/>}/>
+            <Route path="transport/:id/edit" element={<AddTransport/>}/>
+          </Route>
         </Route>
 
-        <Route path="trips" element={<Trips />} />
+        <Route path="trips"  >
+          <Route index element={<Trips/>}/>
+          <Route path="create" element={<TripFormPage/>}/>
+          <Route path=":id/edit" element={<TripFormPage/>}/>
+        </Route>
         <Route path="bookings" element={<Bookings />} />
         <Route path="setting" element={<Setting />} />
       </Route>

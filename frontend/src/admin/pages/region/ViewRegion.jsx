@@ -27,6 +27,13 @@ import { useCitiesStore } from "../../../store/useCitiesStore";
 import { processDataList } from "../../../util/dataUtils";
 import { useStateStore } from "../../../store/useStateStore";
 import DeleteModal from "../../modals/DeleteModal";
+import FilterTool from "../../components/FilterTool";
+
+const cityVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+  exit: { opacity: 0 },
+};
 
 const Viewcity = () => {
   const { stateId } = useParams();
@@ -83,7 +90,7 @@ const Viewcity = () => {
       />
       {/* Header */}
       <StateHeader {...stateData}  onAddCity={()=>navigate(`/admin/regions/${stateId}/city/add` , {state:state?.stateName})} />
-      {/* ─── FILTER TOOLBAR ─── */}
+      {/* FILTER TOOLBAR */}
       <div className="flex flex-col lg:flex-row gap-4 my-6">
         <div className="relative flex-1">
           <Search
@@ -148,7 +155,7 @@ const Viewcity = () => {
                     index={idx}
                     onDelete={() => openDeleteModal(city)} 
                     onEdit={() => navigate(`/admin/regions/${stateId}/city/${city._id}/edit` , {state: state?.stateName})}
-                    onView={() => navigate(`/admin/regions/${state?.stateName || stateData?.stateName}/cities/${city.cityName}/${city._id}/places`, { state: city })}
+                    onView={() => navigate(`/admin/regions/${state?.stateName?.replace(/\s+/g, "-") || stateData?.stateName?.replace(/\s+/g, "-")}/cities/${city?.cityName?.replace(/\s+/g, "-")}/${city._id}/places`, { state: city })}
                   />
                 ))}
               </div>

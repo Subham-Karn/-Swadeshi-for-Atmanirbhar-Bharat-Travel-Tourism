@@ -9,6 +9,11 @@ import { ArrowLeft, MapPin, Star, Clock, Ticket, ChevronRight } from 'lucide-rea
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
+import { usePlaceStore } from '../../store/usePlaceStore';
+import { useEffect } from 'react';
+import { useCitiesStore } from '../../store/useCitiesStore';
+import { useState } from 'react';
+import { useCallback } from 'react';
 const dummyPlaces = [
     {
       id: "p1",
@@ -78,9 +83,28 @@ const dummyPlaces = [
 const DiscoverPlaces = () => {
   const { cityName , stateName , id , cityId} = useParams();
   const navigate = useNavigate();
-  const { state } = useLocation(); 
-  const  places  = dummyPlaces
- const  isLoading = false;
+  const { fetchPlacesByCity , isLoading , places} = usePlaceStore();
+  const [city , setCity] = useState(null);
+  const {fetchCityById ,} = useCitiesStore();
+  
+  const fetchCity = useCallback( async (cId)=>{
+      const respose = await fetchCityById(cId);
+      if(!respose){
+        throw new Error(respose.message);
+      }
+      setCity(respose);
+  },[])
+  useEffect(()=>{
+    if(cityId && city === null){
+      fetchCity(cityId)
+    }
+  },[fetchCity , cityId , city])
+  
+  useEffect(()=>{
+    if(!places || places.length === 0){
+       fetchPlacesByCity(cityId);
+    }
+  },[fetchPlacesByCity , places])
 
   if (isLoading) return <PlacesSkeleton />;
 
@@ -94,17 +118,17 @@ const DiscoverPlaces = () => {
             className="flex items-center gap-2 text-gray-400 hover:text-[#00A699] font-bold text-sm mb-8 transition-colors group"
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            Back to {state?.stateName || 'Cities'}
+            Back to {stateName || 'Cities'}
           </button>
           
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-10">
             <div className="max-w-3xl">
               <div className="flex items-center gap-3 mb-4">
                 <span className="bg-[#00A699]/10 text-[#00A699] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                  {state?.regionType || 'Destination'}
+                  {city?.regionType || 'Destination'}
                 </span>
                 <span className="text-gray-400 text-xs font-bold uppercase tracking-widest flex items-center gap-1">
-                  <MapPin size={12} /> {state?.stateName}, India
+                  <MapPin size={12} /> {stateName}, India
                 </span>
               </div>
               
@@ -113,8 +137,7 @@ const DiscoverPlaces = () => {
               </h1>
 
               <p className="text-gray-500 text-lg md:text-xl font-medium leading-relaxed max-w-2xl">
-                Explore the most iconic landmarks, hidden trails, and cultural hotspots in {cityName}. 
-                Plan your perfect itinerary with our handpicked selection of must-visit places.
+                {city?.overview || "Nope"}
               </p>
             </div>
             
@@ -124,7 +147,7 @@ const DiscoverPlaces = () => {
                   <Star size={24} fill="white" />
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-gray-900 leading-none">4.8</p>
+                  <p className="text-2xl font-black text-gray-900 leading-none">{city?.rating || 0}</p>
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">Avg Rating</p>
                 </div>
               </div>
@@ -199,7 +222,7 @@ const DiscoverPlaces = () => {
                         <Star size={16} fill="currentColor" />
                         <span className="text-white font-bold text-sm">{place.rating || '4.5'}</span>
                       </div>
-                      <Link to={`/destinations/${stateName}/${id}/${cityName}/${cityId}/${place.name}/${place.id}`} className="w-10 h-10 rounded-full bg-[#00A699] text-white flex items-center justify-center translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all">
+                      <Link to={`/destinations/${stateName}/${id}/${cityName.replace(/\s+/g , '-')}/${cityId}/${place.name.replace(/\s+/g , '-')}/${place._id}`} className="w-10 h-10 rounded-full bg-[#00A699] text-white flex items-center justify-center translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all">
                         <ChevronRight size={20} />
                       </Link>
                     </div>

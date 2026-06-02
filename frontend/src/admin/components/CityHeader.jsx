@@ -5,38 +5,57 @@ import { Plus, Calendar, Navigation, Info, Star, ArrowLeft, ChevronLeft } from '
 import { useNavigate } from 'react-router-dom';
 
 const StateHeader = ({ 
-  stateName = "Unknown",
+  cityName = "Unknown",
   regionType = "Region",
-  stateImage = [],
+  cityImages = [],
   overview = "",
   bestTimeToVisit = "N/A",
   reach = "N/A",
-  citiesCount = 0,
+  placeCount = 0,
   rating = 5.0,
   isPopular = false,
-  onAddCity = () => {} 
+  onAddPlace = () => {} ,
+  onAddHotel = () => {},
+  onAddTransport = () => {}
 }) => {
   const navigate = useNavigate();
 
   return (
     <header className="max-w-8xl mx-auto  font-sans">
       {/* HEADER ACTIONS */}
-      <div className='flex items-center justify-between my-3'>
+      <div className='flex items-center justify-between px-2 my-3'>
         <button 
           onClick={() => navigate(-1)}
           className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-slate-900 transition-all shadow-sm"
         >
           <ChevronLeft size={18} />
         </button>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Add New Place Button - Solid Brand Hero Accent */}
+          <button 
+            onClick={() => onAddPlace()} 
+            className="flex items-center justify-center gap-3 px-6 py-4 bg-[#00A699] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-[#00A699]/20 hover:bg-[#008f84] hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <Plus size={16} strokeWidth={3} /> Add New Place
+          </button>
 
-        <button 
-          onClick={() => onAddCity()} 
-          className="flex items-center justify-center gap-3 px-8 py-4 bg-[#00A699] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-teal-100 hover:scale-[1.02] transition-all"
-        >
-          <Plus size={18} strokeWidth={3} /> Add New Cities
-        </button>
+          {/* Add Hotel Button - Clean Premium Border Accent */}
+          <button 
+            onClick={() => onAddHotel()} 
+            className="flex items-center justify-center gap-3 px-6 py-4 bg-white text-[#00A699] border-2 border-[#00A699] rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#00A699]/5 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <Plus size={16} strokeWidth={3} /> Add Hotel
+          </button>
+
+          {/* Add Transport Button - Minimal Tinted Glass Accent */}
+          <button 
+            onClick={() => onAddTransport()} 
+            className="flex items-center justify-center gap-3 px-6 py-4 bg-[#00A699]/10 text-[#00A699] hover:bg-[#00A699]/20 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <Plus size={16} strokeWidth={3} /> Add Transport
+          </button>
+        </div>
       </div>
-
       {/* Main Info Card */}
       <div className="bg-white shadow-xl shadow-gray-200/50 rounded-2xl p-4 border border-gray-100 flex flex-col md:flex-row gap-6 items-center">
         
@@ -48,10 +67,10 @@ const StateHeader = ({
             autoplay={{ delay: 3000, disableOnInteraction: false }}
             className="h-full w-full"
           >
-            {stateImage.length > 0 ? (
-                stateImage.map((img, i) => (
+            {cityImages.length > 0 ? (
+                cityImages.map((img, i) => (
                 <SwiperSlide key={i}>
-                    <img src={img} className="w-full h-full object-cover" alt={stateName} />
+                    <img src={img} className="w-full h-full object-cover" alt={cityImages} />
                 </SwiperSlide>
                 ))
             ) : (
@@ -75,7 +94,7 @@ const StateHeader = ({
               {isPopular && <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
             </div>
             <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter uppercase leading-none">
-              {stateName}
+              {cityName}
             </h1>
           </div>
 
@@ -86,8 +105,7 @@ const StateHeader = ({
           {/* Bottom Stats */}
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
             <CompactStat icon={Calendar} label="Best Time" value={bestTimeToVisit} />
-            <CompactStat icon={Navigation} label="Reach" value={reach} />
-            <CompactStat icon={Info} label="Nodes" value={`${citiesCount} Active`} />
+            <CompactStat icon={Info} label="Total Places" value={`${placeCount} Active`} />
           </div>
 
         </div>

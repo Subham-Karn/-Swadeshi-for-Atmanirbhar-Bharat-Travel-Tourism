@@ -1,9 +1,11 @@
 import mongoose from "mongoose";
 import City from "../schemas/Cities.js";
 import State from "../schemas/States.js";
+import Transport from "../schemas/Transport.js";
+import Hotel from "../schemas/Hotels.js";
+import Place from "../schemas/Place.js";
 
 export const createCity = async (req, res) => {
-  // Start a Mongoose Session for Atomic Transactions
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -67,6 +69,11 @@ export const createCity = async (req, res) => {
       { session },
     );
 
+    await State.findOneAndUpdate(
+      { _id: regionId },
+      { $inc: { citiesCount: 1 } },
+      { session },
+    );
     await session.commitTransaction();
     session.endSession();
 
@@ -192,7 +199,6 @@ export const deleteCity = async (req, res) => {
         message: "Invalid City ID format" 
       });
     }
-
     const city = await City.findById(id).session(session);
 
     if (!city) {
@@ -204,20 +210,27 @@ export const deleteCity = async (req, res) => {
     }
 
     const regionId = city.regionId;
-
+    await Place.deleteMany({ cityId: id }).session(session);
+    await Hotel.deleteMany({ cityId: id }).session(session);
+    await Transport.deleteMany({ cityId: id }).session(session);
     await city.deleteOne({ session });
-
-    await State.findByIdAndUpdate(
-      regionId, 
-      { $inc: { citiesCount: -1 } },
-      { session }
-    );
-
+    if (regionId) {
+      await State.findByIdAndUpdate(
+        regionId, 
+        { $inc: { citiesCount: -1 } },
+        { session }
+      );
+    }
     await session.commitTransaction();
-    res.status(200).json({ success: true, message: "City node purged" });
+    return res.status(200).json({ 
+      success: true, 
+      message: "City node completely purged along with all associated places, hotels, and transit tracks." 
+    });
+
   } catch (error) {
+
     await session.abortTransaction();
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   } finally {
     session.endSession();
   }

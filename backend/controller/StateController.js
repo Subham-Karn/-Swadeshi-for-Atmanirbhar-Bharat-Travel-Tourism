@@ -1,5 +1,8 @@
 import State from "../schemas/States.js";
 import City from "../schemas/Cities.js";
+import Transport from "../schemas/Transport.js";
+import Hotel from "../schemas/Hotels.js";
+import Place from "../schemas/Place.js";
 
 export const createRegion = async (req, res) => {
   try {
@@ -88,21 +91,43 @@ export const updateRegion = async (req, res) => {
 };
 
 export const deleteRegion = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const state = await State.findById(req.params.id);
-    if (!state) {
-      return res
-        .status(404)
-        .json({ success: false, message: "State not found" });
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      await session.abortTransaction();
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid Region/State ID format" 
+      });
     }
+    const state = await State.findById(id).session(session);
+    if (!state) {
+      await session.abortTransaction();
+      return res.status(404).json({ success: false, message: "State not found" });
+    }
+    const linkedCities = await City.find({ regionId: id }).select("_id").session(session);
+    const cityIds = linkedCities.map(city => city._id);
+    if (cityIds.length > 0) {
+      await Place.deleteMany({ cityId: { $in: cityIds } }).session(session);
+      await Hotel.deleteMany({ cityId: { $in: cityIds } }).session(session);
+      await Transport.deleteMany({ cityId: { $in: cityIds } }).session(session);
+      await City.deleteMany({ regionId: id }).session(session);
+    }
+    await state.deleteOne({ session });
+    await session.commitTransaction();
+    return res.status(200).json({ 
+      success: true, 
+      message: "Region/State and all deeply nested hierarchy data trees (Cities, Places, Hotels, Transports) cleanly purged." 
+    });
 
-    await City.deleteMany({ regionId: state._id });
-    await state.deleteOne();
-
-    res
-      .status(200)
-      .json({ success: true, message: "State and associated cities purged" });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    await session.abortTransaction();
+    return res.status(500).json({ success: false, message: error.message });
+  } finally {
+    session.endSession();
   }
 };

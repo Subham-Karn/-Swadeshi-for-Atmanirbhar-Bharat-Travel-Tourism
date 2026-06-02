@@ -175,12 +175,15 @@ const AdminStateCard = ({ region, index, onDelete, onEdit, onView }) => (
           </div>
         )}
       </div>
-      <div>
-        <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase leading-none">{region.stateName}</h3>
-        <p className="text-[10px] font-bold text-slate-400 mt-2 flex items-center gap-1 uppercase tracking-widest">
-           <MapPin size={10} /> {region.reach}
-        </p>
-      </div>
+        <div>
+          <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase leading-none">
+            {region.stateName}
+          </h3>
+          <p className="text-[10px] font-bold text-slate-400 mt-1 flex items-start gap-1 uppercase max-w-3xl tracking-widest leading-normal line-clamp-2">
+            <MapPin size={10} className="shrink-0 mt-0.5 text-[#00A699]" /> 
+            <span>{region.reach}</span>
+          </p>
+        </div>
     </div>
 
     {/* Region Column */}

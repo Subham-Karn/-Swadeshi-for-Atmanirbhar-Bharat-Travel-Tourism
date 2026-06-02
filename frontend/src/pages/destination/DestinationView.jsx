@@ -15,8 +15,6 @@ const DestinationView = ({}) => {
   const navigate = useNavigate();
   const {state} = useLocation();
   const {destinationsById: destination , fetchDestinationsById , isLoading} = useDestinationsStore();
-  console.log(destination);
-  
  if(!id || id === undefined || !state){
     return (
       <div className='text-center text-2xl font-bold text-gray-500'>No destination found</div>
@@ -128,7 +126,7 @@ const DestinationView = ({}) => {
                         </h3>
                         <p className="text-gray-400 text-sm font-bold">Discover {city.cityName || "Not Specified"}</p>
                         </div>
-                        <Link to={`/destinations/${state.stateName}/${id}/${city.cityName}/${city._id}`} className="w-12 h-12 rounded-full bg-gray-50 group-hover:bg-[#00A699] group-hover:text-white flex items-center justify-center transition-all shadow-sm">
+                        <Link to={`/destinations/${state.stateName}/${id}/${city.cityName}/${city._id}`} state={{city}} className="w-12 h-12 rounded-full bg-gray-50 group-hover:bg-[#00A699] group-hover:text-white flex items-center justify-center transition-all shadow-sm">
                         <ChevronRight size={22} />
                         </Link>
                     </div>

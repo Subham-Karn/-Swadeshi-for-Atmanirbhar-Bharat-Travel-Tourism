@@ -30,7 +30,7 @@ const [tempLinks, setTempLinks] = useState([]);
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl p-8 max-h-[80vh] flex flex-col">
             
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Gallery Nodes</h2>
+              <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Gallery Index</h2>
               <button onClick={onClose} className="p-2 bg-slate-50 rounded-full"><X size={20}/></button>
             </div>
 

@@ -7,6 +7,10 @@ import PlaceRoutes from "./routes/PlaceRoute.js";
 import DestinationRoutes from "./routes/DestinationRoute.js";
 import StateRoutes from "./routes/StateRoutes.js";
 import CitiesRoutes from "./routes/CityRoutes.js";
+import HotelsRoutes from "./routes/HotelsRoutes.js";
+import TransportRoutes from "./routes/TransportRoutes.js"
+import TripsRoutes from "./routes/TripRoute.js";
+import morgan from "morgan";
 const app = express();
 connectDb();
 const PORT = process.env.PORT;
@@ -30,7 +34,7 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(morgan("dev"))
 app.use((req, res, next) => {
     const origin = req.headers.origin;
     if (origin && ALLOWED_ORIGIN.includes(origin)) {
@@ -57,12 +61,14 @@ app.get("/" , (req , res)=>{
         message: "Welcome to Bharat Darshan Server"
     })
 })
-
 app.use("/api/v1/auth" , AuthRoutes);
 app.use("/api/v1/states" , StateRoutes);
 app.use("/api/v1/cities" , CitiesRoutes);
 app.use("/api/v1/places" , PlaceRoutes);
 app.use("/api/v1/destinations", DestinationRoutes);
+app.use("/api/v1/hotels", HotelsRoutes);
+app.use("/api/v1/transports", TransportRoutes);
+app.use("/api/v1/trips", TripsRoutes);
 
 app.listen(PORT , ()=>{
     console.log(`http://localhost:${PORT}`);

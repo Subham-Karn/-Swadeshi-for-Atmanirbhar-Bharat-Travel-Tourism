@@ -12,14 +12,15 @@ import {
   MapPin,
   Clock,
   Ticket,
+  CalendarDays,
 } from "lucide-react";
 import { usePlaceStore } from "../../../../store/usePlaceStore";
-import TextEditor from "../../../components/TextEditor";
 import { formatGoogleDriveUrl } from "../../../../util/formatGoogleDriveUrl";
 import MultiPhotoModal from "../../../modals/MultiPhotoModal";
 import toast from "react-hot-toast";
+import OverviewInput from "../../../components/OverviewInput";
 
-// Aligned with your Schema Enum (lowercase values as per schema)
+// Aligned with your Schema Enum precisely (lowercase values as per schema)
 const CategoryOptions = [
   { value: "heritage", label: "Heritage" },
   { value: "religious", label: "Religious" },
@@ -37,18 +38,19 @@ const AddPlaces = () => {
 
   const { fetchPlaceById, isLoading, addPlace, updatePlace } = usePlaceStore();
 
-  // Updated State to match Mongoose Schema
+  // Fully updated state to cleanly pair with all Mongoose schema attributes
   const [forms, setForms] = useState({
     name: "",
+    location: "",
     cityId: cityId || "",
     cityName: cityName || "",
     category: "heritage",
-    location: "", // Added
+    overview: "",
     images: [],
     coverImage: "",
-    overview: "",
-    entryFee: "Free", // Added
-    timings: "09:00 AM - 06:00 PM", // Added
+    entryFee: "Free",            
+    bestTime: "",                
+    timings: "9:00 AM - 6:00 PM",
     isPopular: false,
   });
 
@@ -62,15 +64,16 @@ const AddPlaces = () => {
           if (place) {
             setForms({
               name: place.name || "",
-              cityId: place.cityId || "",
-              cityName: place.cityName || "",
-              images: place.images || [],
-              coverImage: place.coverImage || "",
+              location: place.location || "",
+              cityId: place.cityId || cityId || "",
+              cityName: place.cityName || cityName || "",
               category: place.category || "heritage",
               overview: place.overview || "",
-              location: place.location || "",
+              images: place.images || [],
+              coverImage: place.coverImage || "",
               entryFee: place.entryFee || "Free",
-              timings: place.timings || "09:00 AM - 06:00 PM",
+              bestTime: place.bestTime || "",
+              timings: place.timings || "9:00 AM - 6:00 PM",
               isPopular: place.isPopular || false,
             });
           }
@@ -80,17 +83,21 @@ const AddPlaces = () => {
       };
       loadPlaceDetails();
     }
-  }, [isEditMode, placeId, fetchPlaceById]);
+  }, [isEditMode, placeId, fetchPlaceById, cityId, cityName]);
 
   const handleInputChange = (field, value) => {
     setForms((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
-    // Basic frontend validation
-    if (!forms.name || !forms.location || !forms.overview) {
-      return toast.error("Please fill in all required fields");
-    }
+    if (!forms.name.trim()) return toast.error("Place name is required");
+    if (!forms.location.trim()) return toast.error("Physical address or exact location is required");
+    if (!forms.cityId) return toast.error("Place must be linked to a City ID");
+    if (!forms.cityName.trim()) return toast.error("City name is required for quick lookup");
+    if (!forms.category) return toast.error("Place type is required");
+    if (!forms.overview.trim()) return toast.error("Detailed description/overview is required");
+    if (!forms.entryFee.trim()) return toast.error("Entry fee details are required (Use 'Free' if applicable)");
+    if (forms.images.length === 0) return toast.error("At least one image is required in the gallery stack");
 
     try {
       if (isEditMode) {
@@ -98,15 +105,14 @@ const AddPlaces = () => {
       } else {
         await addPlace(forms);
       }
-      toast.success(`Place ${isEditMode ? "updated" : "created"} successfully`);
-      navigate(`/admin/regions/${stateName}/${forms.cityName}/${forms.cityId}/places`);
+      navigate(`/admin/regions/${stateName?.replace(/\s+/g, "-")}/cities/${forms.cityName?.replace(/\s+/g, "-")}/${cityId}/places`);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to save place");
+      console.error("Error saving document context:", err);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F7F7] font-sans p-6">
+    <div className="min-h-screen  font-sans">
       <MultiPhotoModal
         images={forms.images}
         onClose={() => setIsPhotoModalOpen(false)}
@@ -117,7 +123,6 @@ const AddPlaces = () => {
       {isLoading && <LoadingOverlay isEditMode={isEditMode} />}
 
       <div className="max-w-7xl mx-auto">
-        {/* HEADER */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate(-1)} className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-slate-900 transition-all shadow-sm">
@@ -125,10 +130,10 @@ const AddPlaces = () => {
             </button>
             <div>
               <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">
-                {isEditMode ? "Update Node" : "Create Node"}
+                {isEditMode ? "Update Place" : "Create Place"}
               </h1>
-              <p className="text-[10px] font-bold text-[#00A699] uppercase tracking-widest flex items-center gap-2">
-                <Zap size={12} /> {cityName} / {stateName}
+              <p className="text-[10px] font-black text-[#00A699] uppercase tracking-widest flex items-center gap-2">
+                {forms.cityName || cityName} / {stateName}
               </p>
             </div>
           </div>
@@ -138,10 +143,10 @@ const AddPlaces = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* LEFT: MEDIA */}
-          <section className="lg:col-span-5 p-6 rounded-xl border border-slate-100 bg-white shadow-xl">
+          {/* LEFT SECTION: MEDIA */}
+          <section className="lg:col-span-5 p-6 rounded-3xl border border-slate-100 bg-white shadow-xs">
             <div className="space-y-4 mb-8">
-              <span className="text-[10px] font-black text-[#00A699] uppercase tracking-[0.2em]">Asset Matrix</span>
+              <span className="text-[10px] font-black text-[#00A699] uppercase tracking-[0.2em]">Add Images</span>
               <NodeCoverImage src={forms.coverImage} alt={forms.name} />
               <NodeGalleryStack images={forms.images} />
             </div>
@@ -152,65 +157,80 @@ const AddPlaces = () => {
                 value={forms.coverImage} 
                 onChange={(val) => handleInputChange("coverImage", formatGoogleDriveUrl(val))} 
               />
-              <button onClick={() => setIsPhotoModalOpen(true)} className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-black text-white font-black text-xs uppercase tracking-widest">
-                <ImageIcon size={18} /> Manage Gallery Stack
+              <button onClick={() => setIsPhotoModalOpen(true)} className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-slate-900 hover:bg-black text-white font-black text-xs uppercase tracking-widest transition-colors">
+                <ImageIcon size={18} /> Manage Gallery Stack ({forms.images.length})
               </button>
             </div>
           </section>
 
-          {/* RIGHT: CONFIGURATION */}
-          <section className="lg:col-span-7 p-8 rounded-xl border border-slate-100 bg-white shadow-xl">
+          {/* RIGHT SECTION: ATOMIC SCHEMA CONFIGURATION */}
+          <section className="lg:col-span-7 p-8 rounded-3xl border border-slate-100 bg-white shadow-xs">
             <div className="flex items-center gap-3 mb-8">
               <div className="p-3 bg-teal-50 text-[#00A699] rounded-2xl"><Globe size={22} /></div>
-              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Configuration</h2>
+              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Add Place Details</h2>
             </div>
 
             <div className="space-y-6">
-              {/* Row 1: Name & Category */}
+              {/* Core Context Block: Name & Category Parameters */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InputBase label="Place Name" value={forms.name} onChange={(val) => handleInputChange("name", val)} placeholder="e.g. Amer Fort" />
+                <InputBase label="Place Name *" value={forms.name} onChange={(val) => handleInputChange("name", val)} placeholder="e.g. Amer Fort" />
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category Type *</label>
                   <select 
                     value={forms.category} 
                     onChange={(e) => handleInputChange("category", e.target.value)} 
-                    className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-[#00A699] outline-none font-black text-[10px] uppercase"
+                    className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-[#00A699] focus:bg-white outline-none font-black text-[10px] tracking-wider uppercase transition-all"
                   >
                     {CategoryOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                   </select>
                 </div>
               </div>
 
-              {/* Row 2: Location (Required by Schema) */}
+              {/* Physical Location Input Field (Required by Schema) */}
               <InputBase 
-                label="Physical Location" 
+                label="Physical Address / Exact Location *" 
                 icon={<MapPin size={16}/>} 
                 value={forms.location} 
                 onChange={(val) => handleInputChange("location", val)} 
-                placeholder="Full address or area..." 
+                placeholder="e.g. Devisinghpura, Amer, Jaipur, Rajasthan 302028" 
               />
 
-              {/* Row 3: Logistics (Fee & Timings) */}
+              {/* Logistics & Timing Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InputBase label="Entry Fee" icon={<Ticket size={16}/>} value={forms.entryFee} onChange={(val) => handleInputChange("entryFee", val)} placeholder="e.g. ₹200 or Free" />
-                <InputBase label="Timings" icon={<Clock size={16}/>} value={forms.timings} onChange={(val) => handleInputChange("timings", val)} placeholder="09:00 AM - 06:00 PM" />
+                <InputBase label="Entry Fee Details *" icon={<Ticket size={16}/>} value={forms.entryFee} onChange={(val) => handleInputChange("entryFee", val)} placeholder="e.g. Free, ₹50, or $15" />
+                <InputBase label="Hours of Operation (Timings)" icon={<Clock size={16}/>} value={forms.timings} onChange={(val) => handleInputChange("timings", val)} placeholder="e.g. 9:00 AM - 6:00 PM" />
               </div>
 
-              {/* Toggle: Popular */}
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              {/* Seasonality Configuration: Best Time to Visit */}
+              <InputBase 
+                label="Best Time to Visit" 
+                icon={<CalendarDays size={16}/>} 
+                value={forms.bestTime} 
+                onChange={(val) => handleInputChange("bestTime", val)} 
+                placeholder="e.g. October to March" 
+              />
+
+              {/* Feature Banner Toggle Trigger */}
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl">
                 <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Featured Status</span>
-                    <span className="text-[9px] font-bold text-slate-400">Toggle for Hero Grid layout</span>
+                  <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Popular / Featured Status</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Toggle to feature on customer hero displays</span>
                 </div>
                 <button
+                  type="button"
                   onClick={() => handleInputChange("isPopular", !forms.isPopular)}
-                  className={`w-12 h-6 rounded-full transition-all relative ${forms.isPopular ? "bg-orange-500" : "bg-slate-300"}`}
+                  className={`w-12 h-6 rounded-full transition-all relative outline-none ${forms.isPopular ? "bg-[#00A699]" : "bg-slate-300"}`}
                 >
-                  <motion.div animate={{ x: forms.isPopular ? 24 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg" />
+                  <motion.div animate={{ x: forms.isPopular ? 26 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-md" />
                 </button>
               </div>
 
-              <TextEditor title="Overview Documentation" value={forms.overview} onChange={(e) => handleInputChange("overview", e.target.value)} />
+              {/* Text Area Summary Controller Wrapper */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Detailed Overview / Description *</label>
+                <OverviewInput onChange={(e) => handleInputChange("overview", e.target.value)} value={forms.overview} placeholder="Provide descriptive context regarding history, architecture, and visitor parameters..." />
+              </div>
+
             </div>
           </section>
         </div>
@@ -219,7 +239,8 @@ const AddPlaces = () => {
   );
 };
 
-/* Helper Components to keep code clean */
+// --- HELPER WRAPPER INTERFACE FIELDS ---
+
 const InputBase = ({ label, value, onChange, placeholder, icon }) => (
   <div className="space-y-2">
     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
@@ -228,7 +249,7 @@ const InputBase = ({ label, value, onChange, placeholder, icon }) => (
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full p-4 pl-5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-[#00A699] focus:bg-white outline-none font-bold text-xs"
+        className="w-full p-4 pr-12 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-[#00A699] focus:bg-white outline-none font-bold text-xs text-slate-700 transition-all placeholder:text-slate-400"
         placeholder={placeholder}
       />
       {icon && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">{icon}</div>}
@@ -244,30 +265,28 @@ const InputLink = ({ label, value, onChange }) => (
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Enter Drive ID or URL..."
-        className="w-full px-5 py-4 pr-12 rounded-2xl bg-slate-50 border-2 border-transparent text-xs font-bold text-slate-700 transition-all focus:bg-white focus:border-[#00A699] outline-none"
+        placeholder="Enter Drive ID or raw resource URL..."
+        className="w-full px-5 py-4 pr-12 rounded-2xl bg-slate-50 border-2 border-transparent text-xs font-bold text-slate-700 transition-all focus:bg-white focus:border-[#00A699] outline-none placeholder:text-slate-400"
       />
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#00A699]"><Link size={16} /></div>
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#00A699] transition-colors"><Link size={16} /></div>
     </div>
   </div>
 );
 
 const LoadingOverlay = ({ isEditMode }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-    <motion.div className="p-8 bg-white rounded-3xl shadow-2xl flex flex-col items-center gap-4">
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-xs">
+    <motion.div className="p-8 bg-white rounded-3xl shadow-xl border border-slate-100 flex flex-col items-center gap-4">
       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-12 h-12 border-4 border-t-[#00A699] border-slate-100 rounded-full" />
       <span className="text-xs font-black uppercase tracking-widest text-slate-900">
-        {isEditMode ? "Syncing Details..." : "Registering Node..."}
+        {isEditMode ? "Syncing Details..." : "Registering Destination..."}
       </span>
     </motion.div>
   </div>
 );
 
-export default AddPlaces;
-
 const NodeCoverImage = ({ src, alt }) => {
   return (
-    <div className="relative aspect-video rounded-2xl bg-slate-100 border-2 border-dashed border-slate-200 overflow-hidden group">
+    <div className="relative aspect-video rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 overflow-hidden group">
       <AnimatePresence mode="wait">
         {src ? (
           <motion.div
@@ -283,8 +302,7 @@ const NodeCoverImage = ({ src, alt }) => {
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               referrerPolicy="no-referrer"
             />
-            {/* Subtle Admin Overlay */}
-            <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-t from-black/10 to-transparent pointer-events-none" />
           </motion.div>
         ) : (
           <motion.div
@@ -293,7 +311,7 @@ const NodeCoverImage = ({ src, alt }) => {
             animate={{ opacity: 1 }}
             className="w-full h-full flex flex-col items-center justify-center text-slate-300 gap-3"
           >
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
               <ImageIcon size={32} strokeWidth={1.5} />
             </div>
             <span className="text-[10px] font-black uppercase tracking-[0.2em]">
@@ -302,8 +320,6 @@ const NodeCoverImage = ({ src, alt }) => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Decorative Matrix Corner */}
       <div className="absolute top-4 right-4 w-2 h-2 border-t-2 border-r-2 border-white/40 group-hover:border-[#00A699] transition-colors" />
     </div>
   );
@@ -317,15 +333,14 @@ const NodeGalleryStack = ({ images = [] }) => {
             <motion.div
               key={idx}
               whileHover={{ y: -3 }}
-              className="relative aspect-square rounded-xl overflow-hidden border border-slate-100 bg-slate-50 shadow-sm"
+              className="relative aspect-square rounded-xl overflow-hidden border border-slate-100 bg-slate-50 shadow-xs"
             >
               <img
                 src={img}
-                className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity"
-                alt={`Gallery ${idx}`}
+                className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-all"
+                alt={`Gallery segment ${idx}`}
                 referrerPolicy="no-referrer"
               />
-              {/* Show count overlay on last image if more exist */}
               {idx === 3 && images.length > 4 && (
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center text-white">
                   <span className="text-xs font-black">
@@ -335,11 +350,10 @@ const NodeGalleryStack = ({ images = [] }) => {
               )}
             </motion.div>
           ))
-        : // Empty Slot Placeholders
-          [...Array(4)].map((_, i) => (
+        : [...Array(4)].map((_, i) => (
             <div
               key={i}
-              className="aspect-square rounded-xl border border-dashed border-slate-100 bg-slate-50/50 flex items-center justify-center text-slate-200"
+              className="aspect-square rounded-xl border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-center text-slate-300"
             >
               <Plus size={14} />
             </div>
@@ -347,3 +361,5 @@ const NodeGalleryStack = ({ images = [] }) => {
     </div>
   );
 };
+
+export default AddPlaces;

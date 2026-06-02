@@ -4,6 +4,10 @@
   background-color: #1d4ed8;
 }
 
+
+@theme {
+  --color-primary: #008c82;
+}
 @layer base {
   /* Chrome, Edge, Safari */
   *::-webkit-scrollbar {
