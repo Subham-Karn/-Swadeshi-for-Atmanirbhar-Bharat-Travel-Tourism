@@ -3,6 +3,7 @@ import axios from "../api/axios";
 export const useDestinationsStore = create((set) => ({
     destinations: [],
     destinationsById: [],
+    destinationsCollection: [],
     isLoading: false,
     fetchDestinations: async () => {
         set({ isLoading: true });
@@ -14,6 +15,19 @@ export const useDestinationsStore = create((set) => ({
         } finally {
             set({ isLoading: false });
         }
+    },
+
+    fetchDestinationsCollection: async () =>{
+        try {
+        set({isLoading:true});
+         const response = await axios.get("/destinations/collections/all");
+         set({destinationsCollection: response.data.destinations || []})
+        } catch (error) {
+            console.error("Error fetch destinationsCollection: " , error);
+        }finally{
+            set({isLoading:false});
+        }
+
     },
     fetchDestinationsById: async (id) => {
         set({ isLoading: true });

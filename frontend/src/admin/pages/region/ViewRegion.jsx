@@ -253,7 +253,7 @@ const AdminStateCard = ({ city, index, onDelete, onEdit, onView }) => (
             Created By
           </span>
           <span className="text-xs font-bold text-slate-700">
-            {city.uid.name || "NA"}
+            {city?.uid?.name || "NA"}
           </span>
         </div>
       </div>

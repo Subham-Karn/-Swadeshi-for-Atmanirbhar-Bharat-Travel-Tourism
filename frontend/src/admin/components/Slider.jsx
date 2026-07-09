@@ -14,8 +14,8 @@ const Slider = () => {
   const {user , logout} = useAuthStore((state) => state);
   
 const getProfileName  = (name = "" ) =>{
-  let nameArr = name.split(" ");
-   return nameArr[0][0].toUpperCase() + nameArr[1][0].toUpperCase();
+  const parts = name.trim().split(" ").filter(Boolean);
+  return (parts[0]?.[0] || "U").toUpperCase() + (parts[1]?.[0] || parts[0]?.[1] || "").toUpperCase();
 }
 
   const handleLogout = async () => {

@@ -2,17 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Search, SlidersHorizontal, Plus, MoreVertical, 
-  Mail, Calendar, MapPin, UserX, UserCheck
+  Mail, Calendar, MapPin, UserX, UserCheck, X, Loader2,
+  ShieldCheck
 } from 'lucide-react';
-
-// --- USERS MANAGEMENT DUMMY DATA ---
-const DUMMY_USERS = [
-  { _id: "U-8821", name: "Aarav Mehta", email: "aarav.mehta@registry.com", role: "Super Admin", status: "Active", joined: "May 12, 2026", location: "Mumbai, MH" },
-  { _id: "U-8820", name: "Deepika Rao", email: "deepika.r@registry.com", role: "Editor", status: "Active", joined: "May 18, 2026", location: "Bengaluru, KA" },
-  { _id: "U-8819", name: "Devansh Joshi", email: "joshidev@registry.com", role: "Viewer", status: "Suspended", joined: "Apr 02, 2026", location: "Jaipur, RJ" },
-  { _id: "U-8818", name: "Ananya Sen", email: "ananya.sen@registry.com", role: "Editor", status: "Active", joined: "Mar 29, 2026", location: "Kolkata, WB" },
-  { _id: "U-8817", name: "Kabir Thapar", email: "kabir.t@registry.com", role: "Viewer", status: "Active", joined: "Jan 15, 2026", location: "New Delhi, DL" }
-];
+import { useAuthStore } from '../../store/useAuthStore';
 
 // --- HORIZONTAL PROFILE CARD COMPONENT ---
 
@@ -22,12 +15,14 @@ const UserRowCard = ({ user, index, onToggleStatus }) => {
   const getRoleColors = (role) => {
     switch(role) {
       case 'Super Admin': return 'bg-purple-50 border-purple-100 text-purple-600';
+      case 'admin': return 'bg-purple-50 border-purple-100 text-purple-600';
       case 'Editor': return 'bg-blue-50 border-blue-100 text-blue-600';
       default: return 'bg-slate-50 border-slate-100 text-slate-600';
     }
   };
 
-  const avatarInitials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2);
+  const status = user.isActive === false ? "Suspended" : "Active";
+  const avatarInitials = (user.name || "User").split(' ').map(n => n[0]).join('').slice(0, 2);
 
   return (
     <motion.div
@@ -58,7 +53,7 @@ const UserRowCard = ({ user, index, onToggleStatus }) => {
               <Mail size={12} className="text-slate-300" /> {user.email}
             </span>
             <span className="flex items-center gap-1">
-              <MapPin size={12} className="text-slate-300" /> {user.location}
+              <MapPin size={12} className="text-slate-300" /> {user.address || "No address saved"}
             </span>
           </div>
         </div>
@@ -70,15 +65,15 @@ const UserRowCard = ({ user, index, onToggleStatus }) => {
           <Calendar size={12} className="text-slate-300 sm:hidden" />
           <div>
             <span className="hidden sm:block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Registered</span>
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{user.joined}</span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
-            user.status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+            status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
           }`}>
-            {user.status}
+            {status}
           </span>
 
           {/* Context Options Anchor */}
@@ -98,7 +93,7 @@ const UserRowCard = ({ user, index, onToggleStatus }) => {
                     onClick={() => { onToggleStatus(user._id); setShowMenu(false); }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-bold uppercase tracking-wider rounded-lg text-slate-600 hover:bg-slate-50 transition-all"
                   >
-                    {user.status === 'Active' ? (
+                    {status === 'Active' ? (
                       <>
                         <UserX size={14} className="text-red-500" />
                         <span className="text-red-600">Suspend Access</span>
@@ -145,48 +140,82 @@ const UserRowSkeleton = () => (
 // --- MAIN LIST HOUSING PANEL ---
 
 const AdminUsersManagementPage = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [users, setUsers] = useState(DUMMY_USERS);
+  const { adminUsers, fetchAdminUsers, createAdminUser, updateAdminUser, loading } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    username: "",
+    gender: "male",
+    age: "",
+    email: "",
+    phone: "",
+    address: "",
+    password: "",
+    role: "user",
+    isActive: true,
+  });
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1200);
-    return () => clearTimeout(timer);
-  }, []);
+    fetchAdminUsers();
+  }, [fetchAdminUsers]);
 
   const handleToggleStatus = (id) => {
-    setUsers(prev => prev.map(user => {
-      if (user._id === id) {
-        return { ...user, status: user.status === 'Active' ? 'Suspended' : 'Active' };
-      }
-      return user;
-    }));
+    const target = adminUsers.find((user) => user._id === id);
+    if (target) updateAdminUser(id, { isActive: target.isActive === false });
   };
 
-  const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchQuery.toLowerCase())
+  const resetForm = () => {
+    setForm({
+      name: "",
+      username: "",
+      gender: "male",
+      age: "",
+      email: "",
+      phone: "",
+      address: "",
+      password: "",
+      role: "user",
+      isActive: true,
+    });
+  };
+
+  const handleCreateUser = async (event) => {
+    event.preventDefault();
+    const result = await createAdminUser(form);
+    if (result.success) {
+      resetForm();
+      setIsAddOpen(false);
+    }
+  };
+
+  const filteredUsers = adminUsers.filter(user => 
+    (user.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (user.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (user.role || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 antialiased p-4 md:p-8 font-sans selection:bg-[#00A699]/10 selection:text-[#00A699]">
+    <div className="min-h-screen  text-slate-800 antialiased font-sans selection:bg-[#00A699]/10 selection:text-[#00A699]">
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Module Header Area */}
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200/60 pb-6">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full bg-[#00A699]" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#00A699]">Access & Authority Ledger</span>
-            </div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">
-              User <span className="text-slate-400 font-normal">Ledger</span>
+              Users Management
             </h1>
+            <p className='text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em] mt-2 flex items-center gap-2'>
+            <ShieldCheck size={14} className="text-[#00A699]" /> Verified Users Management
+          </p>
           </div>
-          <button className="flex items-center gap-2 bg-[#00A699] hover:bg-[#008c82] text-white px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-md shadow-[#00A699]/10 active:scale-95 w-full sm:w-auto justify-center">
+          <button
+            type="button"
+            onClick={() => setIsAddOpen(true)}
+            className="flex items-center gap-2 bg-[#00A699] hover:bg-[#008c82] text-white px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-md shadow-[#00A699]/10 active:scale-95 w-full sm:w-auto justify-center"
+          >
             <Plus size={16} />
-            <span>Add New Operator</span>
+            <span>Add User</span>
           </button>
         </header>
 
@@ -206,20 +235,20 @@ const AdminUsersManagementPage = () => {
               <SlidersHorizontal size={16} />
             </button>
             <div className="h-4 w-px bg-slate-200" />
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Total Seats: {filteredUsers.length}</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Total Users: {filteredUsers.length}</span>
           </div>
         </div>
 
         {/* VERTICAL STACK CONTAINER OF HORIZONTAL CARDS */}
-        <main className="bg-white border border-slate-100 rounded-[2.5rem] p-6 shadow-xs">
+        <main className="bg-white border border-slate-100 rounded-xl p-6 shadow-xs">
           <div className="flex justify-between items-center mb-6 px-2">
             <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Active Accounts</h2>
-            {isLoading && <span className="text-xs text-slate-400 font-medium animate-pulse">Syncing permissions...</span>}
+            {loading && <span className="text-xs text-slate-400 font-medium animate-pulse">Syncing permissions...</span>}
           </div>
 
           <div className="flex flex-col gap-3">
             <AnimatePresence mode="popLayout">
-              {isLoading ? (
+              {loading ? (
                 Array.from({ length: 4 }).map((_, i) => <UserRowSkeleton key={i} />)
               ) : filteredUsers.length > 0 ? (
                 filteredUsers.map((user, idx) => (
@@ -240,6 +269,119 @@ const AdminUsersManagementPage = () => {
         </main>
 
       </div>
+
+      {isAddOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center px-4">
+          <form onSubmit={handleCreateUser} className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-slate-900">Add User</h3>
+                <p className="text-xs font-bold text-slate-400">Create a verified user or admin account.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  resetForm();
+                  setIsAddOpen(false);
+                }}
+                className="w-10 h-10 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-500 flex items-center justify-center"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
+              {[
+                ["name", "Full Name", "text"],
+                ["username", "Username", "text"],
+                ["email", "Email", "email"],
+                ["phone", "Phone", "tel"],
+                ["age", "Age", "number"],
+                ["password", "Password", "password"],
+              ].map(([key, label, type]) => (
+                <label key={key} className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</span>
+                  <input
+                    required
+                    type={type}
+                    min={key === "age" ? "1" : undefined}
+                    value={form[key]}
+                    onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold outline-none focus:border-[#00A699]"
+                  />
+                </label>
+              ))}
+
+              <label className="space-y-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Gender</span>
+                <select
+                  value={form.gender}
+                  onChange={(e) => setForm((prev) => ({ ...prev, gender: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold outline-none focus:border-[#00A699] bg-white"
+                >
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+
+              <label className="space-y-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Role</span>
+                <select
+                  value={form.role}
+                  onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold outline-none focus:border-[#00A699] bg-white"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </label>
+
+              <label className="space-y-1.5 md:col-span-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Address</span>
+                <textarea
+                  required
+                  rows="3"
+                  value={form.address}
+                  onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold outline-none focus:border-[#00A699] resize-none"
+                />
+              </label>
+
+              <label className="md:col-span-2 flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <input
+                  type="checkbox"
+                  checked={form.isActive}
+                  onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))}
+                  className="h-4 w-4 accent-[#00A699]"
+                />
+                <span className="text-xs font-black uppercase tracking-wider text-slate-600">Account active</span>
+              </label>
+            </div>
+
+            <div className="p-5 bg-slate-50 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  resetForm();
+                  setIsAddOpen(false);
+                }}
+                className="px-5 py-3 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-wider"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-6 py-3 rounded-xl bg-[#00A699] hover:bg-[#008c82] disabled:bg-slate-300 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2"
+              >
+                {loading && <Loader2 size={15} className="animate-spin" />}
+                Create User
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

@@ -12,24 +12,6 @@ const Footer = () => {
   return (
     <footer className="bg-[#1A1A1A] text-white pt-20 pb-10">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
-        
-        {/* Top Section: Newsletter */}
-        <div className="bg-[#00A699] rounded-3xl p-8 md:p-12 md:px-16 mt-20 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl shadow-teal-900/20 translate-y-[-80px] mb-[-40px]">
-          <div className="text-center md:text-left">
-            <h2 className="text-2xl md:text-3xl font-black mb-2">Get Travel Updates</h2>
-            <p className="text-teal-50 font-medium opacity-90">Subscribe to get secret deals and hidden gem alerts.</p>
-          </div>
-          <div className="w-full md:w-auto flex items-center bg-white/10 backdrop-blur-md rounded-2xl p-2 border border-white/20">
-            <input 
-              type="email" 
-              placeholder="Enter your email" 
-              className="bg-transparent border-none outline-none px-4 py-2 w-full md:w-64 placeholder:text-teal-100 text-white font-medium"
-            />
-            <button className="bg-white text-[#00A699] p-3 rounded-xl hover:bg-teal-50 transition-all active:scale-95">
-              <Send size={20} />
-            </button>
-          </div>
-        </div>
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">

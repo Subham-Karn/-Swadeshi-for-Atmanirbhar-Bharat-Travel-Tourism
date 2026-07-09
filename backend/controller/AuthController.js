@@ -84,7 +84,7 @@ export const verifyAndCreateUser = async (req, res) => {
     const token = generateAccessToken(user._id);
     res.status(201).json({
       message: "Verified!",
-      user: { id: user._id, name: user.name, role: user.role },
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
       accessToken,
       refreshToken,
       token
@@ -130,6 +130,9 @@ export const loginUser = async (req, res) => {
     if (!user.isVerified) {
       return res.status(400).json({ message: "User is not verified." });
     }
+    if (user.isActive === false) {
+      return res.status(403).json({ message: "Your account has been suspended. Please contact support." });
+    }
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch) {
       const { accessToken, refreshToken } = generateTokens(user);
@@ -140,7 +143,7 @@ export const loginUser = async (req, res) => {
         .status(200)
         .json({
           message: "Login successful.",
-          user: { id: user._id, name: user.name, role: user.role },
+          user: { id: user._id, name: user.name, email: user.email, role: user.role },
           accessToken,
           refreshToken,
           token

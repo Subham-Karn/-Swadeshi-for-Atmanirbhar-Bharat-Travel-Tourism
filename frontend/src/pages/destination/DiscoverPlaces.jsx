@@ -1,116 +1,48 @@
-import React from 'react';
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Pagination, EffectFade } from 'swiper/modules';
 import { ArrowLeft, MapPin, Star, Clock, Ticket, ChevronRight } from 'lucide-react';
 
-// Swiper Styles
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
+
 import { usePlaceStore } from '../../store/usePlaceStore';
-import { useEffect } from 'react';
 import { useCitiesStore } from '../../store/useCitiesStore';
-import { useState } from 'react';
-import { useCallback } from 'react';
-const dummyPlaces = [
-    {
-      id: "p1",
-      name: "Amer Fort",
-      isPopular: true,
-      rating: 4.9,
-      duration: "3-4 Hours",
-      entryFee: "₹200",
-      description: "A majestic fort known for its artistic Hindu style elements. Located high on a hill, it is the principal tourist attraction in Jaipur, featuring the stunning Sheesh Mahal (Mirror Palace).",
-      images: [
-        "https://images.unsplash.com/photo-1590593162211-f98f7f462389?q=80&w=1000",
-        "https://images.unsplash.com/photo-1603262110263-fb0112e7cc33?q=80&w=1000",
-      ]
-    },
-    {
-      id: "p2",
-      name: "Hawa Mahal",
-      isPopular: false,
-      rating: 4.7,
-      duration: "1 Hour",
-      entryFee: "₹50",
-      description: "The 'Palace of Breeze' constructed of red and pink sandstone. Its unique five-floor exterior is akin to a honeycomb with its 953 small windows called Jharokhas.",
-      images: [
-        "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=1000",
-        "https://images.unsplash.com/photo-1599661046289-e31897846e41?q=80&w=1000"
-      ]
-    },
-    {
-      id: "p3",
-      name: "City Palace",
-      isPopular: false,
-      rating: 4.8,
-      duration: "2-3 Hours",
-      entryFee: "₹300",
-      description: "A complex of courtyards, gardens and buildings, the City Palace is a striking blend of Rajasthani and Mughal architecture right in the heart of the Old City.",
-      images: [
-        "https://images.unsplash.com/photo-1524230507669-5ff97982bb5e?q=80&w=1000",
-      ]
-    },
-    {
-      id: "p4",
-      name: "Nahargarh Fort",
-      isPopular: true,
-      rating: 4.6,
-      duration: "2 Hours",
-      entryFee: "₹100",
-      description: "Standing on the edge of the Aravalli Hills, this fort offers the most breathtaking panoramic views of the entire Pink City, especially during sunset.",
-      images: [
-        "https://images.unsplash.com/photo-1592342533815-373322d7a27b?q=80&w=1000",
-        "https://images.unsplash.com/photo-160564942838d-756bd02c0c97?q=80&w=1000"
-      ]
-    },
-    {
-      id: "p5",
-      name: "Jantar Mantar",
-      isPopular: false,
-      rating: 4.5,
-      duration: "1.5 Hours",
-      entryFee: "₹100",
-      description: "A UNESCO World Heritage site featuring the world's largest stone sundial. It is a collection of nineteen architectural astronomical instruments.",
-      images: [
-        "https://images.unsplash.com/photo-1635338006453-61109033320c?q=80&w=1000",
-      ]
-    }
-  ];
 
 const DiscoverPlaces = () => {
-  const { cityName , stateName , id , cityId} = useParams();
+  const { cityName, stateName, cityId } = useParams();
   const navigate = useNavigate();
-  const { fetchPlacesByCity , isLoading , places} = usePlaceStore();
-  const [city , setCity] = useState(null);
-  const {fetchCityById ,} = useCitiesStore();
   
-  const fetchCity = useCallback( async (cId)=>{
-      const respose = await fetchCityById(cId);
-      if(!respose){
-        throw new Error(respose.message);
-      }
-      setCity(respose);
-  },[])
-  useEffect(()=>{
-    if(cityId && city === null){
-      fetchCity(cityId)
-    }
-  },[fetchCity , cityId , city])
+  const { fetchPlacesByCity, isLoading: isPlacesLoading, places } = usePlaceStore();
+  const { fetchCityById } = useCitiesStore();
   
-  useEffect(()=>{
-    if(!places || places.length === 0){
-       fetchPlacesByCity(cityId);
-    }
-  },[fetchPlacesByCity , places])
+  const [city, setCity] = useState(null);
+  const [isCityLoading, setIsCityLoading] = useState(true);
 
-  if (isLoading) return <PlacesSkeleton />;
+  const loadCityData = useCallback(async () => {
+    if (!cityId) return;
+    try {
+      const data = await fetchCityById(cityId);
+      setCity(data);
+    } catch (err) {
+      console.error("Failed to fetch city", err);
+    } finally {
+      setIsCityLoading(false);
+    }
+  }, [cityId, fetchCityById]);
+
+  useEffect(() => {
+    loadCityData();
+    fetchPlacesByCity(cityId);
+  }, [cityId, fetchPlacesByCity, loadCityData]);
+
+  if (isCityLoading || isPlacesLoading) return <PlacesSkeleton />;
 
   return (
     <div className="bg-white min-h-screen mt-3">
-      {/* 1. Header Section - State Page Style */}
       <header className="pt-20 pb-12 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <button 
@@ -118,7 +50,7 @@ const DiscoverPlaces = () => {
             className="flex items-center gap-2 text-gray-400 hover:text-[#00A699] font-bold text-sm mb-8 transition-colors group"
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            Back to {stateName || 'Cities'}
+            Back to {stateName}
           </button>
           
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-10">
@@ -128,22 +60,20 @@ const DiscoverPlaces = () => {
                   {city?.regionType || 'Destination'}
                 </span>
                 <span className="text-gray-400 text-xs font-bold uppercase tracking-widest flex items-center gap-1">
-                  <MapPin size={12} /> {stateName}, India
+                  <MapPin size={12} /> {stateName}
                 </span>
               </div>
-              
               <h1 className="text-5xl md:text-7xl font-black text-gray-900 tracking-tighter mb-6">
                 Discover <span className="text-[#00A699]">{cityName}</span>
               </h1>
-
               <p className="text-gray-500 text-lg md:text-xl font-medium leading-relaxed max-w-2xl">
-                {city?.overview || "Nope"}
+                {city?.overview}
               </p>
             </div>
             
-            <div className="bg-gray-50 p-6 rounded-4xl border border-gray-100 shrink-0 self-start">
+            <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 shrink-0">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-yellow-400 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-yellow-400/20">
+                <div className="w-12 h-12 bg-yellow-400 rounded-2xl flex items-center justify-center text-white shadow-lg">
                   <Star size={24} fill="white" />
                 </div>
                 <div>
@@ -156,102 +86,57 @@ const DiscoverPlaces = () => {
         </div>
       </header>
 
-      {/* 2. Places Grid */}
       <section className="py-20 max-w-7xl mx-auto px-6 md:px-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          {places.map((place, index) => {
-            const isPopular = place.isPopular;
-
-            return (
+          <AnimatePresence>
+            {places.map((place) => (
               <motion.div
-                key={index}
+                key={place._id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                // If popular, it takes up 2 columns on large screens
-                className={`group cursor-pointer ${isPopular ? 'lg:col-span-2' : 'col-span-1'}`}
+                className={`group cursor-pointer ${place.isPopular ? 'lg:col-span-2' : 'col-span-1'}`}
               >
-                <div className={`relative ${isPopular ? 'h-125' : 'h-96'} w-full rounded-[2.5rem] overflow-hidden mb-5 shadow-xl`}>
-                  
-                  {/* Image Slider for Places */}
-                  <Swiper
-                    modules={[Autoplay, Pagination, EffectFade]}
-                    effect="fade"
-                    autoplay={{ delay: 4000 + (index * 200) }}
-                    pagination={{ clickable: true }}
-                    className="h-full w-full"
-                  >
+                <div className={`relative ${place.isPopular ? 'h-[500px]' : 'h-96'} w-full rounded-[2.5rem] overflow-hidden mb-5 shadow-xl`}>
+                  <Swiper modules={[Autoplay, Pagination, EffectFade]} effect="fade" autoplay={{ delay: 4000 }} pagination={{ clickable: true }} className="h-full">
                     {place.images?.map((img, idx) => (
                       <SwiperSlide key={idx}>
                         <img src={img} alt={place.name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
                       </SwiperSlide>
                     ))}
                   </Swiper>
-
-                  {/* Overlays */}
-                  <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent pointer-events-none z-10" />
                   
-                  {isPopular && (
-                    <div className="absolute top-6 left-6 z-20">
-                      <span className="bg-yellow-400 text-black text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest shadow-lg">
-                        ⭐ Popular Choice
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Place Content */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
+                  
                   <div className="absolute bottom-0 left-0 w-full p-8 z-20">
-                    <div className="flex flex-wrap gap-3 mb-4">
-                      <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                        <Clock size={12} /> {place.duration || '2-3 Hours'}
-                      </span>
-                      <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                        <Ticket size={12} /> {place.entryFee || 'Free Entry'}
-                      </span>
-                    </div>
-
-                    <h3 className={`${isPopular ? 'text-4xl' : 'text-2xl'} font-black text-white mb-2 tracking-tight`}>
-                      {place.name}
-                    </h3>
-                    <p className="text-gray-300 text-sm line-clamp-2 max-w-lg mb-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <h3 className="text-3xl font-black text-white mb-2">{place.name}</h3>
+                    <p className="text-gray-300 text-sm line-clamp-2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity">
                       {place.description}
                     </p>
-
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1 text-yellow-400">
-                        <Star size={16} fill="currentColor" />
-                        <span className="text-white font-bold text-sm">{place.rating || '4.5'}</span>
+                      <div className="flex gap-4">
+                        <span className="text-white/80 text-xs font-bold flex items-center gap-1"><Clock size={12} /> {place.duration}</span>
+                        <span className="text-white/80 text-xs font-bold flex items-center gap-1"><Ticket size={12} /> {place.entryFee}</span>
                       </div>
-                      <Link to={`/destinations/${stateName}/${id}/${cityName.replace(/\s+/g , '-')}/${cityId}/${place.name.replace(/\s+/g , '-')}/${place._id}`} className="w-10 h-10 rounded-full bg-[#00A699] text-white flex items-center justify-center translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all">
+                      <Link to={`/destinations/${stateName}/${cityName}/${cityId}/${place.name}/${place._id}`} className="w-10 h-10 rounded-full bg-white text-gray-900 flex items-center justify-center hover:bg-[#00A699] hover:text-white transition-all">
                         <ChevronRight size={20} />
                       </Link>
                     </div>
                   </div>
                 </div>
               </motion.div>
-            );
-          })}
+            ))}
+          </AnimatePresence>
         </div>
       </section>
     </div>
   );
 };
 
-/* --- Skeleton for Places Page --- */
 const PlacesSkeleton = () => (
-  <div className="bg-white min-h-screen mt-3">
-    <header className="pt-20 pb-12 border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-6 md:px-12 space-y-6">
-        <div className="h-4 w-32 bg-gray-100 rounded animate-pulse" />
-        <div className="h-16 w-1/2 bg-gray-100 rounded-xl animate-pulse" />
-        <div className="h-20 w-2/3 bg-gray-50 rounded-lg animate-pulse" />
-      </div>
-    </header>
-    <div className="py-20 max-w-7xl mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-3 gap-10">
-      {[1, 2, 3, 4, 5, 6].map(i => (
-        <div key={i} className="h-96 w-full rounded-[2.5rem] bg-gray-100 animate-pulse" />
-      ))}
-    </div>
+  <div className="max-w-7xl mx-auto px-6 py-24 grid grid-cols-1 md:grid-cols-3 gap-10">
+    <div className="md:col-span-2 h-[500px] rounded-[2.5rem] bg-gray-100 animate-pulse" />
+    <div className="h-[400px] rounded-[2.5rem] bg-gray-100 animate-pulse" />
+    <div className="h-[400px] rounded-[2.5rem] bg-gray-100 animate-pulse" />
   </div>
 );
 

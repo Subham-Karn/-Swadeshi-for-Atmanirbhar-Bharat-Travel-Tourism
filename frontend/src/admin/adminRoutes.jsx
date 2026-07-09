@@ -18,6 +18,7 @@ import AdminHotelsPage from "./pages/hotels/Hotels";
 import AddTransport from "./pages/transport/AddTransport";
 import Transport from "./pages/transport/Transport";
 import TripFormPage from "./pages/TripFormPage";
+import BookingDetails from "./pages/BookingDetails";
 const AdminRoute = () => {
   return (
     <Routes>
@@ -59,7 +60,10 @@ const AdminRoute = () => {
           <Route path="create" element={<TripFormPage/>}/>
           <Route path=":id/edit" element={<TripFormPage/>}/>
         </Route>
-        <Route path="bookings" element={<Bookings />} />
+        <Route path="bookings" >
+           <Route index element={<Bookings/>} />
+           <Route path="details/:id" element={<BookingDetails />} />
+        </Route>
         <Route path="setting" element={<Setting />} />
       </Route>
     </Routes>

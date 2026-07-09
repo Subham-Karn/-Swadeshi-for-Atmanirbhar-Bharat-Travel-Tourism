@@ -1,7 +1,7 @@
 import { transporter } from "../config/emailConfig.js";
 export const sendVerificationEmail = async (userEmail, otp) => {
   const mailOptions = {
-    from: "Bharat Darshan <noreply@bharatdarshan.theenglishmedium.in>",
+    from: "Bharat Darshan <noreply@msstore.in>",
     to: userEmail,
     subject: "Verify your Bharat Darshan Account",
     html: `
@@ -28,7 +28,7 @@ export const sendVerificationEmail = async (userEmail, otp) => {
 export const sendEmail = async (mailOptions) => {
   const { to, subject, html } = mailOptions;
   try {
-    await transporter.sendMail({from: "Bharat Darshan <noreply@bharatdarshan.theenglishmedium.in>", to: to, subject: subject, html: html });
+    await transporter.sendMail({from: "Bharat Darshan <noreply@msstore.in>", to: to, subject: subject, html: html });
     return { success: true };
   } catch (error) {
     console.error("Email Error:", error);

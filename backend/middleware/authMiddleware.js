@@ -11,6 +11,9 @@ export const protect = async (req, res, next) => {
     if (!req.user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
+    if (req.user.isActive === false) {
+      return res.status(403).json({ success: false, message: "Account is suspended" });
+    }
     next();
   } catch (error) {
     res.status(401).json({ success: false, message: "Invalid or expired token" });

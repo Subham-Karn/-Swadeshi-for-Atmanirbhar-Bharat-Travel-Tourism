@@ -10,19 +10,23 @@ import CitiesRoutes from "./routes/CityRoutes.js";
 import HotelsRoutes from "./routes/HotelsRoutes.js";
 import TransportRoutes from "./routes/TransportRoutes.js"
 import TripsRoutes from "./routes/TripRoute.js";
+import bookingRoutes from "./routes/BookingRoutes.js"
 import morgan from "morgan";
 const app = express();
 connectDb();
 const PORT = process.env.PORT;
 
-const ALLOWED_ORIGIN = process.env.FRONTEND_URL;
+const ALLOWED_ORIGINS = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
 
-      if (origin === ALLOWED_ORIGIN) {
+      if (ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes(origin)) {
         return callback(null, true);
       }
 
@@ -37,7 +41,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"))
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (origin && ALLOWED_ORIGIN.includes(origin)) {
+    if (origin && (ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes(origin))) {
         res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -69,6 +73,7 @@ app.use("/api/v1/destinations", DestinationRoutes);
 app.use("/api/v1/hotels", HotelsRoutes);
 app.use("/api/v1/transports", TransportRoutes);
 app.use("/api/v1/trips", TripsRoutes);
+app.use("/api/v1/bookings" , bookingRoutes);
 
 app.listen(PORT , ()=>{
     console.log(`http://localhost:${PORT}`);

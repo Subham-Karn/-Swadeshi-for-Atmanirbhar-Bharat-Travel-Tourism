@@ -1,6 +1,8 @@
 import Places from "../schemas/Place.js";
 import City from "../schemas/Cities.js";
 import State from "../schemas/States.js";
+import States from "../schemas/States.js";
+import Cities from "../schemas/Cities.js";
 async function getAllDestinationsCards(req, res) {
   try {
     const destinationDoc = await State.find().select(
@@ -58,4 +60,41 @@ const getDestinationsCities = async (req, res) => {
   }
 };
 
-export { getAllDestinationsCards, getDestinationsCities };
+
+const getDestinationsCitieswithState = async (req, res) => {
+  try {
+    const destinations = await Cities.aggregate([
+      {
+      
+        $lookup: {
+          from: "states", 
+          localField: "regionId",
+          foreignField: "_id",
+          as: "stateDetails",
+        },
+      },
+      {
+        
+        $unwind: "$stateDetails",
+      },
+      {
+        $project: {
+          _id: 1,
+          stateId:"$stateDetails._id",
+          cityName: 1,
+          cityImages: 1, 
+          stateName: "$stateDetails.stateName",
+          regionType: 1,
+          rating: 1,
+          bestTimeToVisit: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json({success: true ,destinations: destinations || []});
+  } catch (error) {
+    res.status(500).json({success:false, message: "Error fetching data", error: error.message });
+  }
+};
+
+export { getAllDestinationsCards, getDestinationsCities , getDestinationsCitieswithState};

@@ -1,5 +1,5 @@
 import express from "express";
-import  { getAllDestinationsCards, getDestinationsCities,  } from "../controller/DestinationController.js";
+import  { getAllDestinationsCards, getDestinationsCities, getDestinationsCitieswithState,  } from "../controller/DestinationController.js";
 
 const router = express.Router();
 
@@ -10,6 +10,8 @@ router.get("/all/:id", getDestinationsCities);
 
 // get all Destinations
 router.get("/all",getAllDestinationsCards);
+
+router.get("/collections/all" , getDestinationsCitieswithState);
 
 
 export default router;

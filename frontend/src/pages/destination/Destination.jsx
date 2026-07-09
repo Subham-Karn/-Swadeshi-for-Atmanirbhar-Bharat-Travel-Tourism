@@ -1,31 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, SlidersHorizontal, ArrowRight, Star, Compass, Wind } from 'lucide-react';
+import { Search, MapPin, ArrowRight, Compass, Star, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-// Dummy Data: All Destinations across India
-const indiaDestinations = [
-  { id: 1, name: "Munnar", state: "Kerala", category: "Hill Station", price: "₹8,000", rating: 4.8, img: "https://images.unsplash.com/photo-1593181629936-11c609b8db9b", slug: "munnar" },
-  { id: 2, name: "Jaipur", state: "Rajasthan", category: "Heritage", price: "₹12,000", rating: 4.7, img: "https://images.unsplash.com/photo-1524230572899-a752b3835840", slug: "jaipur" },
-  { id: 3, name: "Leh", state: "Ladakh", category: "Adventure", price: "₹35,000", rating: 4.9, img: "https://images.unsplash.com/photo-1581791534721-e599df4417f7", slug: "leh" },
-  { id: 4, name: "Alleppey", state: "Kerala", category: "Beach", price: "₹10,000", rating: 4.6, img: "https://images.unsplash.com/photo-1593693397690-362cb9666fc2", slug: "alleppey" },
-  { id: 5, name: "Jodhpur", state: "Rajasthan", category: "Heritage", price: "₹9,500", rating: 4.5, img: "https://images.unsplash.com/photo-1599661046289-e31887846eac", slug: "jodhpur" },
-  { id: 6, name: "Rishikesh", state: "Uttarakhand", category: "Spiritual", price: "₹7,000", rating: 4.9, img: "https://images.unsplash.com/photo-1545208393-2160291ba89e", slug: "rishikesh" },
-];
+import { useDestinationsStore } from "../../store/useDestinationsStore";
 
 const DestinationExplorer = () => {
+  const { fetchDestinationsCollection, destinationsCollection, isLoading } = useDestinationsStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");
   const navigate = useNavigate();
 
-  const categories = ["All", "Hill Station", "Heritage", "Adventure", "Beach", "Spiritual"];
+  useEffect(() => {
+    fetchDestinationsCollection();
+  }, [fetchDestinationsCollection]);
 
-  const filteredResults = indiaDestinations.filter(dest => {
-    const matchesSearch = dest.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          dest.state.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCat = selectedCat === "All" || dest.category === selectedCat;
+  // Dynamically generate unique categories based on regionType
+  const categories = ["All", ...new Set(destinationsCollection.map(d => d.regionType))];
+
+  const filteredResults = destinationsCollection.filter(dest => {
+    const matchesSearch = dest.cityName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          dest.stateName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCat = selectedCat === "All" || dest.regionType === selectedCat;
     return matchesSearch && matchesCat;
   });
+  
 
   return (
     <div className="bg-white min-h-screen pt-24 pb-20">
@@ -39,22 +37,22 @@ const DestinationExplorer = () => {
           
           <div className="flex flex-col md:flex-row gap-4 max-w-4xl">
             <div className="relative flex-grow group">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#00A699] transition-colors" size={22} />
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={22} />
               <input 
                 type="text" 
-                placeholder="Search by city, state or vibe..." 
+                placeholder="Search by city, state or region..." 
                 className="w-full pl-14 pr-6 py-5 rounded-[2rem] bg-gray-50 border-none outline-none focus:ring-2 focus:ring-[#00A699]/20 font-bold text-gray-700 shadow-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button className="bg-[#00A699] text-white px-10 py-5 rounded-[2rem] font-black tracking-widest hover:bg-[#008f84] transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-100">
-              <Compass size={20} className="animate-spin-slow" /> DISCOVER
+            <button className="bg-[#00A699] text-white px-10 py-5 rounded-[2rem] font-black tracking-widest hover:bg-[#008f84] transition-all flex items-center justify-center gap-2 shadow-lg">
+              <Compass size={20} /> DISCOVER
             </button>
           </div>
         </div>
 
-        {/* --- Filter Chips --- */}
+        {/* --- Dynamic Filter Chips --- */}
         <div className="flex flex-wrap gap-3 mb-12">
           {categories.map(cat => (
             <button
@@ -73,60 +71,62 @@ const DestinationExplorer = () => {
 
         {/* --- Results Grid --- */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          <AnimatePresence mode='popLayout'>
-            {filteredResults.map((dest) => (
-              <motion.div
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                key={dest.id}
-                className="group relative h-[450px] rounded-[3rem] overflow-hidden shadow-2xl shadow-gray-200"
-              >
-                {/* Background Image */}
-                <img src={dest.img} alt={dest.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+          {isLoading ? (
+            // Skeleton Loader
+            [...Array(6)].map((_, i) => (
+              <div key={i} className="h-[450px] rounded-[3rem] bg-gray-200 animate-pulse" />
+            ))
+          ) : (
+            <AnimatePresence mode='popLayout'>
+              {filteredResults.map((dest) => (
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  key={dest._id}
+                  className="group relative h-[450px] rounded-[3rem] overflow-hidden shadow-2xl"
+                >
+                  {/* Background Image */}
+                  <img src={dest.cityImages[0]} alt={dest.cityName} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
 
-                {/* Top Badge */}
-                <div className="absolute top-6 left-6 flex gap-2">
-                  <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">
-                    {dest.category}
-                  </span>
-                </div>
-
-                {/* Bottom Content */}
-                <div className="absolute bottom-0 left-0 w-full p-8 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                  <div className="flex items-center gap-2 text-teal-400 text-xs font-black uppercase tracking-[0.2em] mb-2">
-                    <MapPin size={14} /> {dest.state}
+                  {/* Normal State: Details */}
+                  <div className="absolute bottom-8 left-8 transition-opacity duration-300 group-hover:opacity-0">
+                    <p className="text-teal-400 font-black uppercase tracking-widest text-xs flex items-center gap-2 mb-2">
+                      <MapPin size={14} /> {dest.stateName}
+                    </p>
+                    <h3 className="text-4xl font-black text-white">{dest.cityName}</h3>
                   </div>
-                  <h3 className="text-4xl font-black text-white tracking-tighter mb-4 leading-none">
-                    {dest.name}
-                  </h3>
-                  
-                  <div className="flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
-                    <div>
-                       <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Avg. Package</p>
-                       <p className="text-white text-xl font-black">{dest.price}</p>
+
+                  {/* Hover State: Rating & Time */}
+                  <div className="absolute inset-0 p-8 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-black/60 backdrop-blur-sm">
+                    <div className="text-center text-white">
+                      <div className="flex justify-center items-center gap-1 text-yellow-400 mb-2">
+                        <Star size={24} fill="currentColor" />
+                        <span className="text-3xl font-black">{dest.rating}</span>
+                      </div>
+                      <p className="flex items-center gap-2 text-sm font-bold opacity-90 mb-8">
+                        <Calendar size={16} /> Best time: {dest.bestTimeToVisit}
+                      </p>
+                      <button 
+                        onClick={() => navigate(`/destinations/${dest?.stateName}/${dest?.stateId}/${dest?.cityName}/${dest?._id}`)}
+                        className="bg-white text-gray-900 px-8 py-3 rounded-full font-black hover:bg-[#00A699] hover:text-white transition-all shadow-xl"
+                      >
+                        VIEW DETAILS
+                      </button>
                     </div>
-                    {/* EXPLORE BUTTON */}
-                    <button 
-                      onClick={() => navigate(`/destinations/${dest.state.toLowerCase()}`)}
-                      className="bg-white text-gray-900 w-14 h-14 rounded-full flex items-center justify-center hover:bg-[#00A699] hover:text-white transition-all active:scale-95 shadow-xl"
-                    >
-                      <ArrowRight size={24} />
-                    </button>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
         </div>
 
         {/* --- Empty State --- */}
-        {filteredResults.length === 0 && (
+        {!isLoading && filteredResults.length === 0 && (
           <div className="py-20 text-center">
-            <h2 className="text-2xl font-black text-gray-400">No hidden gems found here...</h2>
-            <p className="text-gray-400 mt-2">Try searching for 'Kerala' or 'Heritage'</p>
+            <h2 className="text-2xl font-black text-gray-400">No destinations found.</h2>
           </div>
         )}
       </div>

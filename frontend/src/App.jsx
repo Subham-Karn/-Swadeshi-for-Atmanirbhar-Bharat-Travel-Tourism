@@ -4,9 +4,7 @@ import AdminRoute from './admin/adminRoutes'
 import Navbar from './components/Navbar'
 import HomeRoute from './pages/Home'
 import Footer from './components/Footer'
-import SearchPage from './pages/SearchPage'
 import DestinationRoute from './pages/destination/Destination.jsx'
-import TripDetails from './pages/TripsRoute'
 import AboutIndia from './pages/AboutIndia'
 import ContactRoute from './pages/ContactRoutte'
 import Notfound from './pages/Notfound.jsx'
@@ -23,6 +21,10 @@ import DiscoverPlaces from './pages/destination/DiscoverPlaces.jsx'
 import PlaceDetail from './pages/destination/PlaceDetail.jsx'
 import ForgotPassword from './pages/auth/ForgotPassword.jsx'
 import ResetPassword from './pages/auth/ResetPassword.jsx'
+import TripsRoute from './pages/TripsRoute'
+import TripDetails from './pages/Tripsdetails.jsx'
+import UserBookings from './pages/UserBookings.jsx'
+import UserBookingDetails from './pages/BookingDetails.jsx'
 const App = () => {
   return (
     <>
@@ -81,12 +83,14 @@ const App = () => {
           <Route path="/auth/reset-password/:id/:token" element={<ResetPassword/>} />
 
           {/* Pages */}
-          <Route path='/trips' element={<UserLayout><TripDetails/></UserLayout>} />
+          <Route path='/trips' element={<UserLayout><TripsRoute/></UserLayout>} />
+          <Route path='/trips/details/:id' element={<UserLayout><TripDetails/></UserLayout>} />
           <Route path='/destinations' element={<UserLayout><DestinationRoute/></UserLayout>} />
           <Route path='/destinations/:stateName/:id' element={<UserLayout><DestinationView/></UserLayout>} />
           <Route path='/destinations/:stateName/:id/:cityName/:cityId' element={<UserLayout><DiscoverPlaces/></UserLayout>} />
           <Route path='/destinations/:stateName/:id/:cityName/:cityId/:placeName/:placeId' element={<UserLayout><PlaceDetail/></UserLayout>} />
-          <Route path='/search' element={<UserLayout><SearchPage/></UserLayout>} />
+          <Route path='/my-bookings' element={<UserLayout><UserBookings/></UserLayout>} />
+          <Route path='/bookings/details/:id' element={<UserLayout><UserBookingDetails/></UserLayout>} />
           <Route path='/about' element={<UserLayout><AboutIndia/></UserLayout>} />
           <Route path='/contact' element={<UserLayout><ContactRoute/></UserLayout>} />
           

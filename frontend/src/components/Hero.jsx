@@ -50,41 +50,6 @@ const Hero = () => {
           discover India's hidden gems with Bharat Darshan.
         </motion.p>
 
-        {/* 3. Integrated Search Bar */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.6 }}
-          className="max-w-4xl mx-auto bg-white rounded-3xl md:rounded-full p-4 shadow-2xl flex flex-col md:flex-row items-center gap-4 text-gray-800"
-        >
-          {/* Location Input */}
-          <div className="flex flex-1 items-center gap-3 px-4 w-full border-b md:border-b-0 md:border-r border-gray-100 py-2">
-            <MapPin className="text-[#00A699]" size={20} />
-            <div className="flex flex-col items-start">
-              <span className="text-[10px] font-bold text-gray-400 uppercase">Location</span>
-              <input 
-                type="text" 
-                placeholder="Where to go?" 
-                className="bg-transparent outline-none font-bold text-sm placeholder:text-gray-400"
-              />
-            </div>
-          </div>
-
-          {/* Date Input (Visual Only) */}
-          <div className="flex flex-1 items-center gap-3 px-4 w-full border-b md:border-b-0 md:border-r border-gray-100 py-2">
-            <Calendar className="text-[#00A699]" size={20} />
-            <div className="flex flex-col items-start">
-              <span className="text-[10px] font-bold text-gray-400 uppercase">Duration</span>
-              <span className="text-sm font-bold text-gray-600">Select Dates</span>
-            </div>
-          </div>
-
-          {/* Search Button */}
-          <button className="w-full md:w-auto bg-[#00A699] text-white px-10 py-4 rounded-2xl md:rounded-full font-bold flex items-center justify-center gap-2 hover:bg-[#008f84] transition-all active:scale-95 group">
-            <Search size={20} />
-            <span>Search</span>
-          </button>
-        </motion.div>
 
         {/* Scroll Indicator */}
         <motion.div 

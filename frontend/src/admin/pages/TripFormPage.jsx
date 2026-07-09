@@ -77,14 +77,15 @@ SearchSelectorModal.displayName = 'SearchSelectorModal';
 const TripForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { createTrip } = useTripStore();
+  const { createTrip, updateTrip } = useTripStore();
 
   const [loading, setLoading] = useState(false);
   const [places, setPlaces] = useState([]);
   const [hotels, setHotels] = useState([]);
   const [transports, setTransports] = useState([]);
   const [activeModal, setActiveModal] = useState(null);
-  const {user} = useAuthStore();
+  const { user } = useAuthStore();
+  
   const [formData, setFormData] = useState({
     title: '',
     placeId: '',
@@ -92,10 +93,18 @@ const TripForm = () => {
     transportOptions: [],
     startDate: '',
     endDate: '',
-    estimatedTotalCost: 0,
+    baseCost: 0, // Swapped to explicit BaseCost representation to isolate multipliers
     status: 'upcoming',
     notes: ''
   });
+
+  const calculateNights = useCallback(() => {
+    if (!formData.startDate || !formData.endDate) return 1;
+    const start = new Date(formData.startDate);
+    const end = new Date(formData.endDate);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) return 1;
+    return Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) || 1;
+  }, [formData.startDate, formData.endDate]);
 
   useEffect(() => {
     const fetchDependenciesAndTrip = async () => {
@@ -119,15 +128,29 @@ const TripForm = () => {
           const tripResponse = await api.get(`/trips/admin/detail/${id}`);
           const trip = tripResponse.data?.data || tripResponse.data;
           if (trip) {
+            const start = trip.startDate ? new Date(trip.startDate).toISOString().split('T')[0] : '';
+            const end = trip.endDate ? new Date(trip.endDate).toISOString().split('T')[0] : '';
+            
+            // Reconstruct total logic mapping parameters
+            const currentStart = new Date(start);
+            const currentEnd = new Date(end);
+            const computedNights = (isNaN(currentStart.getTime()) || isNaN(currentEnd.getTime()) || currentStart >= currentEnd) 
+              ? 1 
+              : Math.ceil(Math.abs(currentEnd - currentStart) / (1000 * 60 * 60 * 24)) || 1;
+            
+            const dynamicHotel = fetchedHotels.find(h => h._id === (trip.hotelId?._id || trip.hotelId));
+            const calculatedHotelCost = dynamicHotel ? (dynamicHotel.pricePerNight * computedNights) : 0;
+            const absoluteSavedTotal = trip.budgetCalculation?.estimatedTotalCost || 0;
+
             setFormData({
               title: trip.title || '',
-              userId: trip.userId || user?._id,
+              userId: trip.userId || user?.id || user?._id,
               placeId: trip.placeId?._id || trip.placeId || '',
               hotelId: trip.hotelId?._id || trip.hotelId || '',
               transportOptions: trip.transportOptions?.map(t => t._id || t) || [],
-              startDate: trip.startDate ? new Date(trip.startDate).toISOString().split('T')[0] : '',
-              endDate: trip.endDate ? new Date(trip.endDate).toISOString().split('T')[0] : '',
-              estimatedTotalCost: trip.budgetCalculation?.estimatedTotalCost || 0,
+              startDate: start,
+              endDate: end,
+              baseCost: Math.max(0, absoluteSavedTotal - calculatedHotelCost), 
               status: trip.status || 'upcoming',
               notes: Array.isArray(trip.customNotes) ? trip.customNotes.join(', ') : trip.customNotes || ''
             });
@@ -140,7 +163,7 @@ const TripForm = () => {
       }
     };
     fetchDependenciesAndTrip();
-  }, [id]);
+  }, [id, user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -159,14 +182,6 @@ const TripForm = () => {
     });
   };
 
-  const calculateNights = () => {
-    if (!formData.startDate || !formData.endDate) return 1;
-    const start = new Date(formData.startDate);
-    const end = new Date(formData.endDate);
-    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) return 1;
-    return Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) || 1;
-  };
-
   const activePlace = places.find(p => p._id === formData.placeId);
   const activeHotel = hotels.find(h => h._id === formData.hotelId);
   const filteredHotels = hotels.filter(h => h.cityId === activePlace?.cityId);
@@ -174,59 +189,76 @@ const TripForm = () => {
 
   const totalNights = calculateNights();
   const hotelTotalCost = activeHotel ? (activeHotel.pricePerNight * totalNights) : 0;
-  const grossCalculatedCost = Number(formData.estimatedTotalCost) + hotelTotalCost;
+  const grossCalculatedCost = Number(formData.baseCost) + hotelTotalCost;
 
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.title || !formData.placeId || !formData.startDate || !formData.endDate) {
-      toast.error("Please fill in all baseline operational parameters");
-      return;
-    }
+const handleFormSubmit = async (e) => {
+  e.preventDefault();
+  if (!formData.title || !formData.placeId || !formData.startDate || !formData.endDate) {
+    toast.error("Please fill in all baseline operational parameters");
+    return;
+  }
+  const targetUserId = user?.id || user?._id;
 
-    const payload = {
-      title: formData.title,
-      userId: user?._id,
-      placeId: formData.placeId,
-      hotelId: formData.hotelId || null,
-      transportOptions: formData.transportOptions,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      numberOfDays: totalNights,
-      customNotes: formData.notes ? formData.notes.split(',').map(n => n.trim()).filter(Boolean) : [],
-      status: formData.status,
-      budgetCalculation: {
-        estimatedTotalCost: grossCalculatedCost,
-        currency: 'INR'
-      }
-    };
+  if (!targetUserId) {
+    toast.error("User Context missing. Please verify authentication status.");
+    return;
+  }
 
-    try {
-      if (id) {
-        await api.put(`/trips/admin/update/${id}`, payload);
-        toast.success('Itinerary adjustments logged successfully');
-      } else {
-        await createTrip(payload);
-      }
-      navigate('/admin/trips');
-    } catch (err) {
-      toast.error('Data system rejection error occurred');
+  const payload = {
+    title: formData.title,
+    userId: targetUserId, // Secured validation parameter
+    placeId: formData.placeId,
+    hotelId: formData.hotelId || null,
+    transportOptions: formData.transportOptions || [],
+    startDate: formData.startDate,
+    endDate: formData.endDate,
+    numberOfDays: totalNights,
+    customNotes: formData.notes ? formData.notes.split(',').map(n => n.trim()).filter(Boolean) : [],
+    status: formData.status,
+    budgetCalculation: {
+      estimatedTotalCost: grossCalculatedCost,
+      currency: 'INR'
     }
   };
 
-  if (loading) {
+  try {
+    let outcome;
+    if (id) {
+      outcome = await updateTrip(id, payload);
+    } else {
+      outcome = await createTrip(payload);
+    }
+
+    if (outcome?.success) {
+      navigate('/admin/trips');
+    }
+  } catch (err) {
+    console.error("Submission error details:", err);
+    toast.error('Data system rejection error occurred');
+  }
+};
+
+ if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00A699]"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-2 animate-pulse">
+          <p className="text-sm font-black text-slate-700 tracking-wider uppercase">
+            Syncing System Registry...
+          </p>
+          <p className="text-xs font-bold text-slate-400">
+            Please wait while we initialize travel data nodes.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto space-y-8">
         
         <div className="flex items-center gap-4">
-          <button type="button" onClick={() => navigate(-1)} className="w-11 h-11 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 shadow-2xs transition-colors">
+          <button type="button" onClick={() => navigate(-1)} className="w-11 h-11 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 shadow-xs transition-colors">
             <ArrowLeft size={20} />
           </button>
           <div>
@@ -241,7 +273,7 @@ const TripForm = () => {
           
           <div className="lg:col-span-2 space-y-6">
             
-            <div className="bg-white rounded-xl border border-slate-100 p-6 sm:p-8 shadow-2xs space-y-6">
+            <div className="bg-white rounded-xl border border-slate-100 p-6 sm:p-8 shadow-xs space-y-6">
               <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100">
                 <FileText className="text-[#00A699]" size={22} />
                 <h3 className="text-lg font-black text-slate-800">1. Core Information Settings</h3>
@@ -281,7 +313,7 @@ const TripForm = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-wider">Base Trip Fee (INR)</label>
-                  <input type="number" required name="estimatedTotalCost" value={formData.estimatedTotalCost} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-[#00A699]" min="0" placeholder="15000" />
+                  <input type="number" required name="baseCost" value={formData.baseCost} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-[#00A699]" min="0" placeholder="15000" />
                 </div>
               </div>
 
@@ -291,7 +323,7 @@ const TripForm = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-100 p-6 sm:p-8 shadow-2xs space-y-4">
+            <div className="bg-white rounded-xl border border-slate-100 p-6 sm:p-8 shadow-xs space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-50">
                 <div className="flex items-center gap-2.5">
                   <MapPin className="text-[#00A699]" size={22} />
@@ -310,14 +342,14 @@ const TripForm = () => {
                     <h5 className="font-black text-slate-800 text-base">{activePlace.name}</h5>
                     <p className="text-xs font-bold text-slate-400 mt-0.5 capitalize">{activePlace.cityName} • {activePlace.category} Registry</p>
                   </div>
-                  <span className="text-xs font-black text-[#00A699] bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-3xs">Mapped Node</span>
+                  <span className="text-xs font-black text-[#00A699] bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-xs">Mapped Node</span>
                 </div>
               ) : (
                 <p className="text-sm font-bold text-slate-400 bg-slate-50/50 rounded-xl p-4 text-center border border-dashed border-slate-200">No destination spot currently assigned to this itinerary.</p>
               )}
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-100 p-6 sm:p-8 shadow-2xs space-y-4">
+            <div className="bg-white rounded-xl border border-slate-100 p-6 sm:p-8 shadow-xs space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-50">
                 <div className="flex items-center gap-2.5">
                   <Hotel className="text-[#00A699]" size={22} />
@@ -334,7 +366,7 @@ const TripForm = () => {
                 <div className="p-4 rounded-2xl bg-amber-50/20 border border-amber-100/50 flex justify-between items-center animate-fadeIn">
                   <div>
                     <h5 className="font-black text-slate-800 text-base">{activeHotel.name}</h5>
-                    <p className="text-xs font-bold text-slate-400 mt-0.5 capitalize">{activeHotel.tier} Tier Class • {activeHotel.location.slice(0, 45)}...</p>
+                    <p className="text-xs font-bold text-slate-400 mt-0.5 capitalize">{activeHotel.tier} Tier Class • {activeHotel.location?.slice(0, 45)}...</p>
                   </div>
                   <div className="text-right">
                     <p className="font-black text-slate-700 text-sm">₹{activeHotel.pricePerNight}</p>
@@ -346,7 +378,7 @@ const TripForm = () => {
               )}
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-100 p-6 sm:p-8 shadow-2xs space-y-4">
+            <div className="bg-white rounded-xl border border-slate-100 p-6 sm:p-8 shadow-xs space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-50">
                 <div className="flex items-center gap-2.5">
                   <Navigation className="text-[#00A699]" size={22} />
@@ -376,7 +408,7 @@ const TripForm = () => {
           </div>
 
           <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24">
-            <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-2xs space-y-5">
+            <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-xs space-y-5">
               <h4 className="font-black text-slate-800 text-base border-b border-slate-50 pb-2">Itinerary Manifest Status</h4>
               
               <div className="space-y-4">

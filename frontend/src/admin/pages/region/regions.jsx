@@ -56,6 +56,7 @@ const Regions = () => {
     });
   }, [regions, searchQuery, filterType]);
 
+
   return (
     <div className='w-full min-h-screen font-sans'>
       {/* ─── HEADER ACTIONS ─── */}
@@ -210,8 +211,8 @@ const AdminStateCard = ({ region, index, onDelete, onEdit, onView }) => (
         </div>
         <div className="flex flex-col">
           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Created By</span>
-          <span className="text-xs font-bold text-slate-700">{region.uid.name || "NA"}</span>
-        </div>
+          <span className="text-xs font-bold text-slate-700">{region?.uid?.name || "NA"}</span>
+        </div> 
       </div>
     </div>
 

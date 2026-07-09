@@ -105,12 +105,6 @@ const Navbar = () => {
 
         {/* Action Buttons */}
         <div className="hidden md:flex items-center gap-4">
-          <button
-            onClick={() => navigate("/search")}
-            className={`p-2 rounded-full hover:bg-teal-50 hover:text-[#00A699] transition-all ${textColor}`}
-          >
-            <Search size={20} />
-          </button>
 
           <div className="h-6 w-px bg-gray-300/50" />
 

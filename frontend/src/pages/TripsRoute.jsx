@@ -1,167 +1,220 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Filter, 
-  Clock, 
-  Star, 
-  ArrowRight, 
-  Flame, 
-  Search,
-  ChevronDown,
-  Tag
+  Search, Calendar, MapPin, ArrowRight, Sparkles, 
+  Compass, SlidersHorizontal, Info, Tag
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTripStore } from '../store/useTripStore';
+import { useAuthStore } from '../store/useAuthStore';
 
 const TripsPage = () => {
   const navigate = useNavigate();
-  const [filter, setFilter] = useState("All");
-  const [search, setSearch] = useState("");
+  const { trips, fetchUserTrips, isLoading } = useTripStore();
+  const { user } = useAuthStore();
 
-  const categories = ["All", "Solo", "Family", "Honeymoon", "Adventure", "Luxury"];
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
 
-  // Dummy Data for Trip Marketplace
-  const allTrips = [
-    { id: 1, title: "Golden Triangle Tour", duration: "6 Days", price: 18500, rating: 4.8, category: "Family", img: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da", tag: "Best Seller" },
-    { id: 2, title: "Manali Snow Escape", duration: "4 Days", price: 9999, rating: 4.9, category: "Adventure", img: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23", tag: "Trending" },
-    { id: 3, title: "Romantic Udaipur Lake Stay", duration: "3 Days", price: 15000, rating: 5.0, category: "Honeymoon", img: "https://images.unsplash.com/photo-1590050853549-3663675003c2", tag: "Romantic" },
-    { id: 4, title: "Backpackers Kerala", duration: "7 Days", price: 12500, rating: 4.7, category: "Solo", img: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944", tag: "Budget" },
-    { id: 5, title: "Ladakh Bike Trip", duration: "10 Days", price: 32000, rating: 4.9, category: "Adventure", img: "https://images.unsplash.com/photo-1581791534721-e599df4417f7", tag: "High Demand" },
-    { id: 6, title: "Goa Beach Luxury Villa", duration: "5 Days", price: 45000, rating: 4.8, category: "Luxury", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2", tag: "Premium" },
-  ];
+  const categories = ["All", "Heritage", "Adventure", "Nature", "Luxury", "Solo"];
 
-  const filteredTrips = allTrips.filter(trip => {
-    const matchesCat = filter === "All" || trip.category === filter;
-    const matchesSearch = trip.title.toLowerCase().includes(search.toLowerCase());
-    return matchesCat && matchesSearch;
-  });
+  useEffect(() => {
+    if (user?.id) {
+      fetchUserTrips(user.id);
+    }
+  }, [user?.id, fetchUserTrips]);
+
+  // Combined Search & Filter Logic based on the real Mongoose payload structures
+  const filteredTrips = useMemo(() => {
+    return trips.filter(trip => {
+      const matchesCategory = activeCategory === "All" || 
+        trip.placeId?.category?.toLowerCase() === activeCategory.toLowerCase();
+      
+      const matchesStatus = statusFilter === "All" || 
+        trip.status?.toLowerCase() === statusFilter.toLowerCase();
+
+      const matchesSearch = trip.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        trip.placeId?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        trip.placeId?.cityName?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      return matchesCategory && matchesStatus && matchesSearch;
+    });
+  }, [trips, activeCategory, statusFilter, searchQuery]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50/50">
+        <div className="text-center space-y-2 animate-pulse">
+          <p className="text-sm font-black text-slate-700 tracking-wider uppercase">Loading Travel Registry...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white min-h-screen pt-24 pb-20">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
+    <div className="bg-slate-50/50 min-h-screen pt-28 pb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         
-        {/* --- Header Section --- */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-          <div className="max-w-2xl">
-            <h1 className="text-5xl md:text-7xl font-black text-gray-900 tracking-tighter leading-none mb-4">
-              READY TO <span className="text-[#00A699]">GO?</span>
+        {/* --- Section Header Layout --- */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-200/60">
+          <div className="space-y-2">
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-teal-50 text-[#00A699] font-black text-[10px] tracking-widest uppercase rounded-lg border border-teal-100/60">
+              <Compass size={12} /> Personal Travel Vault
+            </span>
+            <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight">
+              MY <span className="text-[#00A699]">EXPLORATIONS</span>
             </h1>
-            <p className="text-gray-500 font-medium text-lg">Browse curated itineraries designed for every type of traveler.</p>
+            <p className="text-slate-400 font-bold text-sm">Review, track, and manage your dynamic travel infrastructure configurations.</p>
           </div>
 
-          {/* Search Box */}
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          {/* Combined Live Search Bar */}
+          <div className="relative w-full md:w-96 shadow-xs rounded-2xl">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
-              placeholder="Find a specific trip..."
-              className="w-full pl-12 pr-4 py-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-[#00A699]/20 font-bold text-sm"
-              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by trip title, city or landmark..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200/80 rounded-2xl font-bold text-sm outline-none focus:border-[#00A699] transition-all"
             />
           </div>
         </div>
 
-        {/* --- Filter Bar --- */}
-        <div className="flex items-center gap-4 mb-12 overflow-x-auto pb-4 no-scrollbar">
-          <div className="flex items-center gap-2 bg-gray-900 text-white px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shrink-0">
-            <Filter size={16} /> Filters
-          </div>
-          <div className="h-8 w-px bg-gray-200 mx-2" />
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setFilter(cat)}
-              className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shrink-0 ${
-                filter === cat 
-                ? 'bg-[#00A699] text-white shadow-lg shadow-teal-100' 
-                : 'bg-gray-50 text-gray-400 hover:text-gray-800'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* --- Spotlight Card (Optional) --- */}
-        {filter === "All" && !search && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative w-full h-[350px] rounded-[3rem] overflow-hidden mb-16 group cursor-pointer"
-            onClick={() => navigate('/trips/5')}
-          >
-            <img src="https://images.unsplash.com/photo-1506461883276-594a12b11cf3" className="w-full h-full object-cover" alt="Banner" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-            <div className="absolute inset-0 p-12 flex flex-col justify-center">
-              <span className="flex items-center gap-2 text-teal-400 font-black text-xs uppercase tracking-[0.3em] mb-4">
-                <Flame size={16} /> Limited Time Deal
-              </span>
-              <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-4">
-                The Ultimate <br /> Ladakh Expedition
-              </h2>
-              <p className="text-white/70 max-w-sm mb-6 font-medium">Get 20% off on bike rentals and group bookings this summer.</p>
-              <div className="flex items-center gap-6">
-                 <button className="bg-white text-gray-900 px-8 py-4 rounded-2xl font-black tracking-widest text-xs hover:bg-[#00A699] hover:text-white transition-all">
-                    EXPLORE DEAL
-                 </button>
-                 <span className="text-white font-black text-2xl">₹28,000 <span className="text-sm text-white/50 line-through">₹35,000</span></span>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* --- Trips Grid --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          <AnimatePresence>
-            {filteredTrips.map((trip) => (
-              <motion.div
-                layout
-                key={trip.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="group flex flex-col"
+        {/* --- Filter Bar Hub Control --- */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
+          
+          {/* Category Pill Filters */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 sm:pb-0">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap shrink-0 border ${
+                  activeCategory === cat 
+                    ? 'bg-[#00A699] border-[#00A699] text-white' 
+                    : 'bg-slate-50 border-slate-200/60 text-slate-500 hover:border-slate-300'
+                }`}
               >
-                <div className="relative h-80 rounded-[2.5rem] overflow-hidden mb-6">
-                  <img src={trip.img} alt={trip.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                  <div className="absolute top-6 left-6">
-                    <span className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl text-[10px] font-black text-gray-900 uppercase shadow-sm">
-                      {trip.tag}
-                    </span>
-                  </div>
-                  <div className="absolute bottom-6 right-6">
-                    <button 
-                      onClick={() => navigate(`/trips/${trip.id}`)}
-                      className="w-12 h-12 bg-[#00A699] text-white rounded-full flex items-center justify-center shadow-xl translate-y-20 group-hover:translate-y-0 transition-transform duration-500"
-                    >
-                      <ArrowRight size={20} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="px-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[#00A699] font-black text-[10px] uppercase tracking-widest flex items-center gap-1">
-                       <Clock size={12} /> {trip.duration}
-                    </span>
-                    <div className="flex items-center gap-1 text-gray-900 font-bold text-xs">
-                       <Star size={12} fill="currentColor" className="text-orange-400" /> {trip.rating}
-                    </div>
-                  </div>
-                  <h3 className="text-2xl font-black text-gray-800 tracking-tighter mb-4 group-hover:text-[#00A699] transition-colors">
-                    {trip.title}
-                  </h3>
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-1">
-                       <Tag size={14} className="text-gray-400" />
-                       <span className="text-xs font-bold text-gray-400">{trip.category}</span>
-                    </div>
-                    <p className="text-xl font-black text-gray-900">₹{trip.price.toLocaleString()}</p>
-                  </div>
-                </div>
-              </motion.div>
+                {cat}
+              </button>
             ))}
-          </AnimatePresence>
+          </div>
+
+          {/* Workflow Status Dropdown Filter */}
+          <div className="flex items-center gap-2 shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+            <SlidersHorizontal size={14} className="text-slate-400" />
+            <span className="text-xs font-black text-slate-400 uppercase tracking-wider">State:</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1.5 font-bold text-xs text-slate-700 outline-none focus:border-[#00A699]"
+            >
+              <option value="All">All States</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="completed">Completed</option>
+              <option value="draft">Draft</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+
         </div>
+
+        {/* --- Itineraries Results Dynamic Grid --- */}
+        {filteredTrips.length === 0 ? (
+          <div className="text-center py-24 bg-white border border-slate-100 rounded-[2rem] shadow-xs space-y-3">
+            <Info className="mx-auto text-slate-300" size={40} />
+            <p className="text-slate-700 font-black text-lg">No Matching Itineraries</p>
+            <p className="text-slate-400 font-bold text-xs max-w-sm mx-auto">Try adjusting your active category query terms or search string parameters.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <AnimatePresence mode="popLayout">
+              {filteredTrips.map((trip) => {
+                const formattedStart = trip.startDate ? new Date(trip.startDate).toLocaleDateString(undefined, {month:'short', day:'numeric'}) : '';
+                const formattedEnd = trip.endDate ? new Date(trip.endDate).toLocaleDateString(undefined, {month:'short', day:'numeric'}) : '';
+                
+                return (
+                  <motion.div
+                    layout
+                    key={trip._id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="group bg-white border border-slate-100 rounded-[2.5rem] p-4 shadow-xs hover:shadow-xl transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      {/* Media Window */}
+                      <div className="relative h-60 rounded-[2rem] overflow-hidden mb-5">
+                        <img 
+                          src={trip.placeId?.coverImage || "https://images.unsplash.com/photo-15424492412937-b28074a5d7da"} 
+                          alt={trip.title} 
+                          className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-700" 
+                        />
+                        
+                        {/* Status Float Badge */}
+                        <div className="absolute top-4 left-4">
+                          <span className={`px-3 py-1 backdrop-blur-md rounded-xl text-[9px] font-black uppercase tracking-wider shadow-xs ${
+                            trip.status === 'upcoming' ? 'bg-emerald-500/90 text-white' :
+                            trip.status === 'completed' ? 'bg-slate-800/90 text-white' : 'bg-amber-500/90 text-white'
+                          }`}>
+                            {trip.status}
+                          </span>
+                        </div>
+
+                        {/* Category Float Tag */}
+                        {trip.placeId?.category && (
+                          <div className="absolute bottom-4 left-4">
+                            <span className="bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-lg text-[9px] font-black text-slate-700 uppercase tracking-widest flex items-center gap-1 shadow-2xs">
+                              <Tag size={10} className="text-[#00A699]" /> {trip.placeId.category}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info Body */}
+                      <div className="px-2 space-y-2">
+                        <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                          <Calendar size={12} className="text-[#00A699]" />
+                          <span>{formattedStart} — {formattedEnd}</span>
+                          <span>•</span>
+                          <span className="text-slate-500">{trip.numberOfDays || 1} Days Stay</span>
+                        </div>
+
+                        <h3 className="text-xl font-black text-slate-800 tracking-tight group-hover:text-[#00A699] transition-colors line-clamp-1">
+                          {trip.title}
+                        </h3>
+
+                        <div className="flex items-center gap-1 text-xs font-bold text-slate-500 pb-2">
+                          <MapPin size={13} className="text-slate-400 shrink-0" />
+                          <span className="truncate">{trip.placeId?.name} ({trip.placeId?.cityName})</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Financial Summary & Action Line */}
+                    <div className="mt-4 pt-4 border-t border-slate-100/80 px-2 flex items-center justify-between">
+                      <div>
+                        <span className="block text-[9px] font-black text-slate-400 uppercase tracking-wider">Valuation</span>
+                        <p className="text-lg font-black text-slate-800">
+                          ₹{trip.budgetCalculation?.estimatedTotalCost?.toLocaleString() || "0"}
+                        </p>
+                      </div>
+                      
+                      <button 
+                        onClick={() => navigate(`/trips/details/${trip._id}`)}
+                        className="h-10 px-4 bg-slate-50 group-hover:bg-[#00A699] text-slate-700 group-hover:text-white rounded-xl flex items-center gap-1.5 text-xs font-black uppercase tracking-wider shadow-2xs transition-all"
+                      >
+                        Explore <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+                    </div>
+
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
 
       </div>
     </div>

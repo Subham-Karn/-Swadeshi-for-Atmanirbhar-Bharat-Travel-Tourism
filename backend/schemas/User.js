@@ -10,6 +10,7 @@ const UserSchema = new mongoose.Schema({
   address: { type: String, required: true },
   password: { type: String, required: true },
   role: { type: String, enum: ["user", "admin"], default: "user" },
+  isActive: { type: Boolean, default: true },
   
   // Verification Fields
   isVerified: { type: Boolean, default: false },
@@ -22,7 +23,8 @@ const UserSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Auto-delete unverified users after 15 minutes to keep DB clean
 UserSchema.index({ otpExpires: 1 }, { expireAfterSeconds: 0 });
 
-export default mongoose.model("User", UserSchema);
+const User = mongoose.model("User", UserSchema);
+
+export default User;

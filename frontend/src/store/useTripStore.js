@@ -84,7 +84,8 @@ export const useTripStore = create((set, get) => ({
     }
   },
 
-  // Added: Full document update action to synchronize database changes with UI state variables
+  
+
   updateTrip: async (tripId, tripPayload) => {
     try {
       set({ isLoading: true, error: null });
